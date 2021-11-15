@@ -1,0 +1,214 @@
+﻿@page "/User"
+
+@inject Blazored.SessionStorage.ISessionStorageService _SessionStorage
+@inject Severino.SOS.Services.IHttpService _HttpService
+@inject NavigationManager _navigationManager
+@inject NotificationService NotificationService
+
+@using System.Text.Json
+@using System.IO
+@using System.Net
+
+<div class="HeaderPage">@title ! </div>
+<div class="Wrapper">
+    <img src="./Images/severino.png" alt="Severino" />
+    <div class="form" style=" width: 50vw;">
+        <RadzenTabs RenderMode="TabRenderMode.Client" SelectedIndex="FIndex">
+            <Tabs>
+                <RadzenTabsItem Text="Dados Pessoais">
+                    <span>Dados Pessoais</span>
+                    <div>Nome:</div>
+                    <RadzenTextBox @bind-Value="FUser.Nome"></RadzenTextBox>
+                    <div>WhatsApp:</div>
+                    <RadzenTextBox @bind-Value="FUser.Whatsapp"></RadzenTextBox>
+                    <div>E-mail::</div>
+                    <RadzenTextBox @bind-Value="FUser.Email"></RadzenTextBox>
+                    <div>Senha:</div>
+                    <RadzenPassword @bind-Value="Pass"></RadzenPassword>
+                    <div>Confirme a Senha:</div>
+                    <RadzenPassword @bind-Value="ConfirmPass"></RadzenPassword>
+                    <div style="text-align:center;">
+                        <RadzenButton Click="SendUser" ButtonStyle="ButtonStyle.Warning" Text="Salvar" Style="margin: 10px 0; width:200px"></RadzenButton>
+                    </div>
+
+                </RadzenTabsItem>
+                <RadzenTabsItem Text="Endereço" Disabled="EndTabDisable">
+                    <label>Endereço </label>
+                    <div>CEP:</div>
+                    <div class="CEPDiv">
+                        <RadzenTextBox @bind-Value="FAddress.Cep"></RadzenTextBox>
+                        <RadzenButton Click="(X => Search())" ButtonStyle="ButtonStyle.Warning" Style="float: right" Icon="search" />
+                    </div>
+                    <div>Rua:</div>
+                    <RadzenTextBox @bind-Value="FAddress.Logradouro"></RadzenTextBox>
+                    <div>Numero:</div>
+                    <RadzenTextBox @bind-Value="FAddress.Numero"></RadzenTextBox>
+                    <div>Bairro:</div>
+                    <RadzenTextBox @bind-Value="FAddress.Bairro"></RadzenTextBox>
+                    <div>Cidade:</div>
+                    <RadzenTextBox @bind-Value="FAddress.Localidade"></RadzenTextBox>
+                    <div>UF:</div>
+                    <RadzenDropDown TValue="string" Data=@UFs @bind-Value="FAddress.Uf" />
+
+                    <div>Complemento:</div>
+                    <RadzenTextBox @bind-Value="FAddress.Complemento"></RadzenTextBox>
+                    <div style="text-align:center;">
+                        <RadzenButton Click="SendAddres" ButtonStyle="ButtonStyle.Warning" Text="Salvar" Style="margin: 10px 0; width: 200px;"></RadzenButton>
+                    </div>
+                </RadzenTabsItem>
+            </Tabs>
+        </RadzenTabs>
+    </div>
+</div>
+
+@code{
+    public bool EndTabDisable { get; set; } = true;
+    public int FIndex { get; set; } = 0;
+
+    public User FUser { get; set; } = new();
+    public Address FAddress { get; set; } = new();
+    public string Pass { get; set; }
+    public string ConfirmPass { get; set; }
+
+    public string title { get; set; } = "Participe Você Também!";
+
+
+    private List<string> UFs = new List<string> { "SP", "MG", "PR", "RJ" };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await _SessionStorage.GetItemAsync<string>("token") != null)
+        {
+            title = "Mantenha seus dados sempre em ordem!";
+            var resp = await _HttpService.GetAsync("users", null, null);
+            if (resp.StatusCode == HttpStatusCode.OK)
+            {
+
+                FUser = await JsonSerializer.DeserializeAsync<User>(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(resp.Content ?? "")));
+                if (FUser.Address.Count > 0) FAddress = FUser.Address.Where(A => A.IsProff == false).FirstOrDefault();
+                EndTabDisable = false;
+            }
+        }
+    }
+
+    public async Task SendUser()
+    {
+        var obj = new object();
+        Response resp1 = new();
+
+        if ((Pass != null && Pass == ConfirmPass) || FUser.Id == 0)
+        {
+            obj = new
+            {
+                nome = FUser.Nome,
+                email = FUser.Email,
+                whatsapp = FUser.Whatsapp,
+                password = Pass,
+                is_proff = FUser.IsProff ? "true" : "false"
+            };
+        }
+        else
+        {
+            obj = new
+            {
+                nome = FUser.Nome,
+                email = FUser.Email,
+                whatsapp = FUser.Whatsapp,
+                is_proff = FUser.IsProff ? "true" : "false"
+            };
+        }
+        if (FUser.Id == 0)
+        {
+            resp1 = await _HttpService.PostAsync("users", obj, null);
+            if (resp1.StatusCode == HttpStatusCode.OK)
+            {
+                var user = new
+                {
+                    email = FUser.Email,
+                    password = Pass
+                };
+
+                var response = await _HttpService.PostAsync("tokens", user, null);
+
+                if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    var data = await JsonSerializer.DeserializeAsync<TokenResponse>
+                        (new MemoryStream(System.Text.Encoding.UTF8.GetBytes(response.Content ?? "")));
+                    await _SessionStorage.SetItemAsStringAsync("token", data.token);
+                }
+            }
+        }
+        else resp1 = await _HttpService.PutAsync("users", null, obj, null);
+
+        if (resp1.StatusCode == HttpStatusCode.OK)
+        {
+            ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Usuário Atualizado", Detail = "Usuário atualizado com Sucesso", Duration = 4000 });
+            EndTabDisable = false;
+            FIndex = 1;
+        }
+        else ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Erro de atualização", Detail = "Ocorreram erros na atualização", Duration = 4000 });
+    }
+    private async Task SendAddres()
+    {
+        Response resp1 = new();
+        Response resp2 = new();
+        var FAddressOb = new
+        {
+            logradouro = FAddress.Logradouro,
+            numero = FAddress.Numero,
+            bairro = FAddress.Bairro,
+            localidade = FAddress.Localidade,
+            uf = FAddress.Uf,
+            cep = FAddress.Cep,
+            complemento = FAddress.Complemento == null ? string.Empty : FAddress.Complemento,
+            is_proff = FAddress.IsProff ? "true" : "false"
+        };
+        if (FAddress.Id == 0)
+        {
+            resp2 = await _HttpService.PostAsync("Address", FAddressOb, null);
+        }
+
+        else resp2 = await _HttpService.PutAsync("Address", FAddress.Id.ToString(), FAddressOb, null);
+
+        if (resp2.StatusCode == HttpStatusCode.OK)
+        {
+            ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Endereço Atualizado", Detail = "Endereço atualizado com Sucesso", Duration = 4000 });
+        }
+        else ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Erro de atualização", Detail = "Ocorreram erros na atualização", Duration = 4000 });
+    }
+    private async Task Search()
+    {
+        if (FAddress.Cep != null && FAddress.Cep != String.Empty)
+        {
+            var CEPObj = new
+            {
+                cep = FAddress.Cep
+            };
+            var resp = await _HttpService.GetAsync("address", null, CEPObj);
+            if (resp.StatusCode == HttpStatusCode.OK)
+            {
+                FAddress = await JsonSerializer.DeserializeAsync<Address>
+                (new MemoryStream(System.Text.Encoding.UTF8.GetBytes(resp.Content ?? "")));
+            }
+        }
+
+    }
+    private void ShowNotification(NotificationMessage message)
+    {
+        NotificationService.Notify(message);
+    }
+    public class TokenResponse
+    {
+        public string token { get; set; }
+    }
+}
+
+<style>
+    .Wrapper {
+        display: flex;
+        justify-content: space-around;
+    }
+    .rz-colorpicker, .rz-lookup-search input, .rz-spinner, .rz-calendar .rz-inputtext, .rz-multiselect, .rz-dropdown, .mask, .rz-textarea, .rz-textbox {
+        width: -webkit-fill-available !important;
+    }
+</style>

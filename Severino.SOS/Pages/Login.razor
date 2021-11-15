@@ -1,0 +1,80 @@
+﻿@page "/Login"
+
+@inject Blazored.SessionStorage.ISessionStorageService SessionStorage;
+@inject NavigationManager _navigationManager;
+@inject Severino.SOS.Services.IHttpService _HttpService;
+@inject NotificationService NotificationService
+
+@using System.Text.Json
+@using System.IO
+
+<div class="LoginWrapper">
+    <img src="./Images/SEVERINO.gif" alt="Severino S.O.S." />
+    <div class="InputWrapper">
+        <RadzenTextBox @bind-Value="Email" Placeholder="E-mail" />
+        <RadzenPassword @bind-Value="Password" Placeholder="Senha" />
+        <div>
+            <RadzenButton Click="Submit" Text="Entrar" ButtonStyle="ButtonStyle.Warning" @onkeypress="@Enter" />
+            <RadzenButton Click="Cadastro" Text="Registre-se" ButtonStyle="ButtonStyle.Warning" />
+        </div>
+    </div>
+</div>
+
+@code {
+    public string Email;
+    public string Password;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (await SessionStorage.GetItemAsync<string>("token") == null)
+            await base.OnAfterRenderAsync(firstRender);
+        else
+            _navigationManager.NavigateTo("", true);
+    }
+
+    private async Task Submit()
+    {
+        Dictionary<string, string> LoginParms = new();
+
+        var user = new
+        {
+            email = Email,
+            password = Password
+        };
+
+        var response = await _HttpService.PostAsync("tokens", user, null);
+
+        if (response.StatusCode == System.Net.HttpStatusCode.OK)
+        {
+            var data = await JsonSerializer.DeserializeAsync<TokenResponse>(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(response.Content ?? "")));
+            await SessionStorage.SetItemAsStringAsync("token", data.token);
+            ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Login Realizado", Detail = "Login Realizado com Sucesso", Duration = 4000 });
+            _navigationManager.NavigateTo("/", true);
+        }
+        else
+        {
+            ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Login Falhou", Detail = "Ocorreram erros no login", Duration = 4000 });
+        }
+    }
+    public class TokenResponse
+    {
+        public string token { get; set; }
+    }
+    void ShowNotification(NotificationMessage message)
+    {
+        NotificationService.Notify(message);
+    }
+
+    public async Task Enter(KeyboardEventArgs e)
+    {
+        if (e.Code == "Enter" || e.Code == "NumpadEnter")
+        {
+            await Submit();
+        }
+    }
+    public void Cadastro()
+    {
+        _navigationManager.NavigateTo("/User", true);
+    }
+
+}

@@ -1,0 +1,378 @@
+﻿@page "/Service"
+@page "/Service/{ID:int}"
+
+@inject Blazored.SessionStorage.ISessionStorageService _SessionStorage
+@inject Severino.SOS.Services.IHttpService _HttpService
+@inject NavigationManager _navigationManager
+@inject NotificationService NotificationService
+
+@using System.Text.Json
+@using System.IO
+@using System.Net
+
+<div class="HeaderPage">@title ! </div>
+<div class="Wrapper">
+    <div class="icons">
+        <i class="fas fa-car-side fa-5x"></i>
+        <i class="fas fa-motorcycle fa-5x"></i>
+        <i class="fas fa-truck fa-5x"></i>
+        <i class="fas fa-bus fa-5x"></i>
+    </div>
+    <div class="form">
+        <RadzenTabs RenderMode="TabRenderMode.Client" @bind-SelectedIndex="FIndex">
+            <Tabs>
+                <RadzenTabsItem Text="Dados do Serviço">
+                    <div>Titulo:</div>
+                    <RadzenTextBox @bind-Value="service.Title" />
+
+                    <p>Categoria:</p>
+                    <RadzenDropDown TValue="int" Style="width:300px"
+                                    Data=@Categorias
+                                    TextProperty="Text" ValueProperty="ID"
+                                    @bind-Value="service.Categoria" />
+
+                    <p>Tipo:</p>
+                    <RadzenDropDown TValue="int" Style="width:300px"
+                                    Data=@Tipos
+                                    TextProperty="Text" ValueProperty="ID"
+                                    @bind-Value="service.Tipo" />
+
+                    <div>Descrição:</div>
+                    <RadzenTextArea Cols="40" @bind-Value="service.Descricao" />
+
+                    <div>Tags:</div>
+                    <div style="display:flex; align-items: center; justify-content:space-evenly">
+                        <RadzenTextBox @bind-Value="TagIt" />
+                        <RadzenButton Click=@(args => { Tags.Add(TagIt); TagIt = string.Empty; }) Text="+" ButtonStyle="ButtonStyle.Warning" Style="margin:5px" />
+                    </div>
+                    <div class="CardArea" style="display:flex; flex-wrap: wrap;">
+                        @foreach (var tag in Tags)
+                        {
+                            <RadzenButton Click=@(args => { Tags.Remove(tag); }) Text=@(tag + "    X") ButtonStyle="ButtonStyle.Warning" Style="margin:5px" />
+                        }
+                    </div>
+                    <RadzenButton Click=@(SendService) Text="Enviar" Class="PlusButton" ButtonStyle="ButtonStyle.Warning" />
+                </RadzenTabsItem>
+                <RadzenTabsItem Text="Agenda" Disabled="AgendaTabDisable">
+                    <RadzenCheckBox @bind-Value=@AgendaDisable Name="AgendaFixa" TValue="bool" />
+                    <RadzenLabel Text="Serviço sem Agenda" Component="AgendaFixa" Style="margin-left: 5px;" />
+                    <div class="DiaGroup">
+                        <div class="DiaItem">
+                            <span style="width:60px; text-align:center;">Segunda </span>
+                            <span>
+                                De: <RadzenMask Mask="**:**" Pattern="[^0-9]" Placeholder="00:00" @bind-Value=@Agendas[0].Ini Disabled="AgendaDisable" Style="width:60px !important" />
+                                Até: <RadzenMask Mask="**:**" Pattern="[^0-9]" Placeholder="00:00" @bind-Value=@Agendas[0].Fim Disabled="AgendaDisable" Style="width: 60px !important" />
+                            </span>
+                        </div>
+                        <div class="DiaItem">
+                            <span style="width:60px; text-align:center;">Terça   </span>
+                            <span>
+                                De: <RadzenMask Mask="**:**" Pattern="[^0-9]" Placeholder="00:00" @bind-Value=@Agendas[1].Ini Disabled="AgendaDisable" Style="width: 60px !important" />
+                                Até: <RadzenMask Mask="**:**" Pattern="[^0-9]" Placeholder="00:00" @bind-Value=@Agendas[1].Fim Disabled="AgendaDisable" Style="width: 60px !important" />
+                            </span>
+                        </div>
+                        <div class="DiaItem">
+                            <span style="width:60px; text-align:center;">Quarta  </span>
+                            <span>
+                                De: <RadzenMask Mask="**:**" Pattern="[^0-9]" Placeholder="00:00" @bind-Value=@Agendas[2].Ini Disabled="AgendaDisable" Style="width: 60px !important" />
+                                Até: <RadzenMask Mask="**:**" Pattern="[^0-9]" Placeholder="00:00" @bind-Value=@Agendas[2].Fim Disabled="AgendaDisable" Style="width: 60px !important" />
+                            </span>
+
+                        </div>
+                        <div class="DiaItem">
+                            <span style="width:60px; text-align:center;">Quinta  </span>
+                            <span>
+                                De: <RadzenMask Mask="**:**" Pattern="[^0-9]" Placeholder="00:00" @bind-Value=@Agendas[3].Ini Disabled="AgendaDisable" Style="width: 60px !important" />
+                                Até: <RadzenMask Mask="**:**" Pattern="[^0-9]" Placeholder="00:00" @bind-Value=@Agendas[3].Fim Disabled="AgendaDisable" Style="width: 60px !important" />
+                            </span>
+
+                        </div>
+                        <div class="DiaItem">
+                            <span style="width:60px; text-align:center;">Sexta   </span>
+                            <span>
+                                De: <RadzenMask Mask="**:**" Pattern="[^0-9]" Placeholder="00:00" @bind-Value=@Agendas[4].Ini Disabled="AgendaDisable" Style="width: 60px !important" />
+                                Até: <RadzenMask Mask="**:**" Pattern="[^0-9]" Placeholder="00:00" @bind-Value=@Agendas[4].Fim Disabled="AgendaDisable" Style="width: 60px !important" />
+                            </span>
+
+                        </div>
+                        <div class="DiaItem">
+                            <span style="width:60px; text-align:center;">Sabado  </span>
+                            <span>
+                                De: <RadzenMask Mask="**:**" Pattern="[^0-9]" Placeholder="00:00" @bind-Value=@Agendas[5].Ini Disabled="AgendaDisable" Style="width: 60px !important" />
+                                Até: <RadzenMask Mask="**:**" Pattern="[^0-9]" Placeholder="00:00" @bind-Value=@Agendas[5].Fim Disabled="AgendaDisable" Style="width: 60px !important" />
+                            </span>
+
+                        </div>
+                        <div class="DiaItem">
+                            <span style="width:60px; text-align:center;">Domingo </span>
+                            <span>
+                                De: <RadzenMask Mask="**:**" Pattern="[^0-9]" Placeholder="00:00" @bind-Value=@Agendas[6].Ini Disabled="AgendaDisable" Style="width: 60px !important" />
+                                Até: <RadzenMask Mask="**:**" Pattern="[^0-9]" Placeholder="00:00" @bind-Value=@Agendas[6].Fim Disabled="AgendaDisable" Style="width: 60px !important" />
+                            </span>
+
+                        </div>
+                    </div>
+                    <div style="text-align:center;">
+                        <RadzenButton Click="SendAgenda" ButtonStyle="ButtonStyle.Warning" Text="Salvar" Style="margin: 10px 0; width: 200px;"></RadzenButton>
+                    </div>
+                </RadzenTabsItem>
+                <RadzenTabsItem Text="Endereço" Disabled="EndTabDisable">
+                    <RadzenCheckBox @bind-Value=@EndDisable Name="Campo" Placeholder="Serviço de Campo" TValue="bool" />
+                    <RadzenLabel Text="Serviço de Campo" Component="Campo" Style="margin-left: 5px;" />
+                    <h3>Endereço </h3>
+                    <div>CEP:</div>
+                    <div class="CEPDiv">
+                        <RadzenTextBox @bind-Value="FAddress.Cep" Disabled="EndDisable"></RadzenTextBox>
+                        <RadzenButton Click="(X => Search())" Disabled="EndDisable" ButtonStyle="ButtonStyle.Warning" Style="float: right" Icon="search" />
+                    </div>
+                    <div>Rua:</div>
+                    <RadzenTextBox @bind-Value="FAddress.Logradouro" Disabled="EndDisable"></RadzenTextBox>
+                    <div>Numero:</div>
+                    <RadzenTextBox @bind-Value="FAddress.Numero" Disabled="EndDisable"></RadzenTextBox>
+                    <div>Bairro:</div>
+                    <RadzenTextBox @bind-Value="FAddress.Bairro" Disabled="EndDisable"></RadzenTextBox>
+                    <div>Cidade:</div>
+                    <RadzenTextBox @bind-Value="FAddress.Localidade" Disabled="EndDisable"></RadzenTextBox>
+                    <div>UF:</div>
+                    <RadzenDropDown TValue="string" Data=@UFs @bind-Value="FAddress.Uf" Disabled="EndDisable" />
+
+                    <div>Complemento:</div>
+                    <RadzenTextBox @bind-Value="FAddress.Complemento" Disabled="EndDisable"></RadzenTextBox>
+                    <div style="text-align:center;">
+                        <RadzenButton Click="SendAddres" ButtonStyle="ButtonStyle.Warning" Text="Salvar" Style="margin: 10px 0; width: 200px;"></RadzenButton>
+                    </div>
+                </RadzenTabsItem>
+            </Tabs>
+        </RadzenTabs>
+    </div>
+</div>
+
+@code{
+    public bool EndTabDisable { get; set; } = true;
+    public bool AgendaTabDisable { get; set; } = true;
+    public bool AgendaDisable { get; set; } = false;
+    public bool EndDisable { get; set; } = false;
+    public int FIndex { get; set; } = 0;
+
+    public User FUser { get; set; } = new();
+    public Address FAddress { get; set; } = new();
+    public string Pass { get; set; }
+    public List<string> Tags { get; set; } = new();
+    public string TagIt { get; set; }
+    public string ConfirmPass { get; set; }
+
+    public string title { get; set; } = "Participe Você Também!";
+
+    [Parameter]
+    public int ID { get; set; }
+
+    public class Categoria
+    {
+        public int ID { get; set; }
+        public string Text { get; set; }
+    }
+
+    public List<Categoria> Categorias = new List<Categoria>()
+{
+        new Categoria{ ID=1, Text = "Automóveis"},
+        new Categoria{ ID=2, Text = "Motocicletas"},
+        new Categoria{ ID=3, Text = "Onibus e Micro-Ônibus"},
+        new Categoria{ ID=4, Text = "Caminhonetes"},
+        new Categoria{ ID=5, Text = "Caminhões"}
+    };
+
+    public List<Categoria> Tipos = new List<Categoria>()
+{
+        new Categoria{ ID=1, Text = "Mecânica"},
+        new Categoria{ ID=2, Text = "Elétrica"},
+        new Categoria{ ID=3, Text = "Transporte"},
+        new Categoria{ ID=4, Text = "Estética"},
+    };
+
+    private List<string> UFs = new List<string>
+{
+        "SP", "MG", "PR", "RJ"
+    };
+
+    public class Agenda
+    {
+        public int id { get; set; }
+        public int Dia { get; set; }
+        public string Ini { get; set; }
+        public string Fim { get; set; }
+    }
+
+    public Service service { get; set; } = new();
+    public Address address { get; set; } = new();
+    public List<Agenda> Agendas = new List<Agenda>() {
+            new Agenda { Dia = 1 },
+            new Agenda { Dia = 2 },
+            new Agenda { Dia = 3 },
+            new Agenda { Dia = 4 },
+            new Agenda { Dia = 5 },
+            new Agenda { Dia = 6 },
+            new Agenda { Dia = 7 }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await _SessionStorage.GetItemAsync<string>("token") != null)
+        {
+            var resp = await _HttpService.GetAsync("users", null, null);
+            if (resp.StatusCode == HttpStatusCode.OK)
+            {
+
+                var employee = await JsonSerializer.DeserializeAsync<User>(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(resp.Content ?? "")));
+                if (employee.Address != null) address = employee.Address.Where(A => A.IsProff == true).FirstOrDefault();
+                if (address == null)
+                {
+                    address = employee.Address.Where(A => A.IsProff == false).FirstOrDefault();
+                    address.Id = 0;
+                }
+            }
+            if (ID > 0)
+            {
+                var resp2 = await _HttpService.GetAsync("services/" + ID.ToString(), null, null);
+                if (resp2.StatusCode == HttpStatusCode.OK)
+                {
+                    service = await JsonSerializer.DeserializeAsync<Service>(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(resp2.Content ?? "")));
+                    foreach (var Agenda in service.Schedules)
+                    {
+                        Agendas[Agenda.Dia - 1].id = Agenda.Id;
+                        Agendas[Agenda.Dia - 1].Ini = Agenda.De;
+                        Agendas[Agenda.Dia - 1].Fim = Agenda.Ate;
+                    }
+                    AgendaDisable = !(service.Schedules.Any());
+                    Tags = service.Tags.Split(',').ToList();
+                    if (service.Address != null)
+                    {
+                        FAddress = service.Address;
+                    }
+                    EndDisable = (service.Address == null);
+                }
+                EndTabDisable = false;
+                AgendaTabDisable = false;
+            }
+        }
+        else
+        {
+            _navigationManager.NavigateTo("/", true);
+        }
+    }
+
+    private async Task SendService()
+    {
+        var Obj = new object();
+        var resp1 = new Response();
+        Obj = new
+        {
+            categoria = service.Categoria,
+            tipo = service.Tipo,
+            titulo = service.Title,
+            descricao = service.Descricao,
+            tag = string.Join(",", Tags)
+        };
+        if (ID > 0)
+        {
+
+            resp1 = await _HttpService.PutAsync("services", ID.ToString(), Obj, null);
+        }
+        else
+        {
+            resp1 = await _HttpService.PostAsync("services", Obj, null);
+        }
+        if (resp1.StatusCode == HttpStatusCode.OK)
+        {
+            service = await JsonSerializer.DeserializeAsync<Service>(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(resp1.Content ?? "")));
+            AgendaTabDisable = false;
+            ID = service.Id;
+            FIndex = 1;
+        }
+    }
+
+    private async Task SendAddres()
+    {
+        if (!EndDisable)
+        {
+
+            Response resp2 = new();
+            var FAddressOb = new
+            {
+                logradouro = FAddress.Logradouro,
+                numero = FAddress.Numero,
+                bairro = FAddress.Bairro,
+                localidade = FAddress.Localidade,
+                uf = FAddress.Uf,
+                cep = FAddress.Cep,
+                complemento = FAddress.Complemento == null ? string.Empty : FAddress.Complemento,
+                is_proff = true,
+                service_id = ID
+            };
+            if (FAddress.Id == 0)
+            {
+                resp2 = await _HttpService.PostAsync("Address", FAddressOb, null);
+            }
+
+            else resp2 = await _HttpService.PutAsync("Address", FAddress.Id.ToString(), FAddressOb, null);
+
+            if (resp2.StatusCode == HttpStatusCode.OK)
+            {
+                ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Endereço Atualizado", Detail = "Endereço atualizado com Sucesso", Duration = 4000 });
+                FIndex = 0;
+            }
+            else ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Erro de atualização", Detail = "Ocorreram erros na atualização", Duration = 4000 });
+        }
+        FIndex = 0;
+    }
+
+    private async Task SendAgenda()
+    {
+        foreach (var dia in Agendas)
+        {
+            var Obj = new
+            {
+                dia = dia.Dia,
+                de = dia.Ini,
+                ate = dia.Fim,
+                service_id = service.Id.ToString()
+            };
+            if ((dia.Ini == "00:00" && dia.Fim == "00:00") || dia.Ini == null || dia.Fim == null) continue;
+            if (dia.id > 0) await _HttpService.PutAsync("schedules", dia.id.ToString(), Obj, null);
+            else await _HttpService.PostAsync("schedules", Obj, null);
+        }
+        EndTabDisable = false;
+        FIndex = 2;
+    }
+
+    private async Task Search()
+    {
+        if (FAddress.Cep != null && FAddress.Cep != String.Empty)
+        {
+            var CEPObj = new
+            {
+                cep = FAddress.Cep
+            };
+            var resp = await _HttpService.GetAsync("address", null, CEPObj);
+            if (resp.StatusCode == HttpStatusCode.OK)
+            {
+                FAddress = await JsonSerializer.DeserializeAsync<Address>(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(resp.Content ?? "")));
+            }
+        }
+
+    }
+    private void ShowNotification(NotificationMessage message)
+    {
+        NotificationService.Notify(message);
+    }
+}
+
+<style>
+    .Wrapper {
+        display: flex;
+        justify-content: space-around;
+    }
+
+    .rz-colorpicker, .rz-lookup-search input, .rz-spinner, .rz-calendar .rz-inputtext, .rz-multiselect, .rz-dropdown, .mask, .rz-textarea, .rz-textbox {
+        width: -webkit-fill-available !important;
+    }
+</style>

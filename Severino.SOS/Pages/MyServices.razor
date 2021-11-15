@@ -1,0 +1,218 @@
+﻿@page "/MyServices"
+
+@inject Blazored.SessionStorage.ISessionStorageService _SessionService;
+@inject NavigationManager _NavManager;
+@inject Services.IHttpService _HttpServices;
+@inject DialogService DialogService
+
+@using System.Text.Json
+@using System.IO
+@using System.Net
+@using System.Text.Json.Serialization;
+
+<div class="WrappCards" style="width:99%">
+    <RadzenButton Click=@(args => Edit(0)) Text="Adicionar Serviço" ButtonStyle="ButtonStyle.Warning" class="AddButton" />
+    @if (FDSServices.Any())
+    {
+
+<RadzenDataList WrapItems="true" AllowPaging="true" PageSize="9" @bind-Data="FDSServices" TItem="Service">
+    <Template Context="context">
+        <RadzenCard Style="width:25%;">
+            <div class="row">
+                <RadzenTabs RenderMode="TabRenderMode.Client">
+                    <Tabs>
+                        <RadzenTabsItem Text="Serviço">
+                            <div class="tabView">
+
+                                <div class="col-md-5">
+                                    <b>Servico:</b>
+                                    <div>@context.Title</div>
+                                    <b>Tipo:</b>
+                                    <div>@Tipos.Where(X => X.ID == context.Tipo).FirstOrDefault().Text</div>
+                                    @if (context.Categoria == 1)
+                                    {<i class="fas fa-car-side fa-3x"></i>}
+                                    else if (context.Categoria == 2)
+                                    {<i class="fas fa-motorcycle fa-3x"></i>}
+                                    else if (context.Categoria == 3)
+                                    {<i class="fas fa-bus fa-3x"></i>}
+                                    else if (context.Categoria == 4)
+                                    {<i class="fas fa-truck-pickup fa-3x"></i>}
+                                    else
+                                    {<i class="fas fa-truck fa-3x"></i>}
+                                </div>
+                                <div class="col-md-5">
+                                    <b>Descrição:</b>
+                                    <div>@context.Descricao</div>
+                                </div>
+                            </div>
+                        </RadzenTabsItem>
+                        <RadzenTabsItem Text="Endereco">@*  *@
+                            <div class="tabView">
+                                @if (context.Address != null)
+                                {
+
+                                    <div class="col-md-5">
+                                        <b>Cidade:</b>
+                                        <div>@(context.Address.Localidade + " - " + context.Address.Cep)</div>
+                                        <b>Logradouro:</b>
+                                        <div>@(context.Address.Logradouro + " N° " + context.Address.Numero)</div>
+                                        <b>Bairro</b>
+                                        <div>@(context.Address.Bairro)</div>
+                                        <b>Complemento</b>
+                                        <div>@context.Address.Complemento</div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <h2>Serviço de Campo*</h2>
+                                }
+                            </div>
+                        </RadzenTabsItem>
+            <RadzenTabsItem Text="Agenda">
+                <RadzenDataGrid AllowFiltering="true" AllowPaging="true" AllowSorting="true" Data="@context.Schedules" TItem="Schedule">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="Schedule" Property="DiaSemana" Title="Dia da Semana"></RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="Schedule" Property="De" Title="Inicio"></RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="Schedule" Property="Ate" Title="Termino"></RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+            </RadzenTabsItem>
+            </Tabs>
+            </RadzenTabs>
+</div>
+                    <RadzenButton Click=@(args => Edit(context.Id)) Text="Editar" ButtonStyle="ButtonStyle.Warning" />
+                </RadzenCard>
+            </Template>
+        </RadzenDataList>
+    }
+</div>
+
+@code {
+
+    private IEnumerable<Service> FServices { get; set; } = new List<Service>();
+    private IEnumerable<Service> FDSetServices { get; set; }
+    private IEnumerable<Service> FDSServices { get; set; } = new List<Service>();
+    private int UserId { get; set; }
+    private int FIndex { get; set; } = 0;
+
+    public class Categoria
+    {
+        public int ID { get; set; }
+        public string Text { get; set; }
+    }
+
+    public List<AgendaGrid> DSAgenda = new List<AgendaGrid>()
+{
+        new AgendaGrid{Dia = 1, SemanaDia = "Segunda"},
+        new AgendaGrid{Dia = 2, SemanaDia = "Terça"},
+        new AgendaGrid{Dia = 3, SemanaDia = "Quarta"},
+        new AgendaGrid{Dia = 4, SemanaDia = "Quinta"},
+        new AgendaGrid{Dia = 5, SemanaDia = "Sexta"},
+        new AgendaGrid{Dia = 6, SemanaDia = "Sábado"},
+        new AgendaGrid{Dia = 7, SemanaDia = "Domingo"}
+    };
+
+    public List<Categoria> Categorias = new List<Categoria>()
+{
+        new Categoria{ ID=1, Text = "Automóveis"},
+        new Categoria{ ID=2, Text = "Motocicletas"},
+        new Categoria{ ID=3, Text = "Onibus e Micro-Ônibus"},
+        new Categoria{ ID=4, Text = "Caminhonetes"},
+        new Categoria{ ID=5, Text = "Caminhões"}
+    };
+
+    public List<Categoria> Tipos = new List<Categoria>()
+{
+        new Categoria{ ID=1, Text = "Mecânica"},
+        new Categoria{ ID=2, Text = "Elétrica"},
+        new Categoria{ ID=3, Text = "Transporte"},
+        new Categoria{ ID=4, Text = "Estética"},
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var token = await _SessionService.GetItemAsync<string>("token");
+        if (token == null)
+        {
+            _NavManager.NavigateTo("/", true);
+        }
+        else
+        {
+            var resp = await _HttpServices.GetAsync("users", null, null);
+            if (resp.StatusCode == HttpStatusCode.OK)
+            {
+
+                var User = await JsonSerializer.DeserializeAsync<User>(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(resp.Content ?? "")));
+                UserId = User.Id;
+            }
+        }
+        var lResp = await _HttpServices.GetAsync("/services", null, null);
+        if (lResp.StatusCode == System.Net.HttpStatusCode.OK)
+        {
+            FServices = await JsonSerializer.DeserializeAsync<IEnumerable<Service>>(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(lResp.Content ?? "")));
+            FServices = FServices.Where(X => X.UserId == UserId).ToList();
+            foreach (var service in FServices)
+            {
+                service.Schedules = service.Schedules.OrderBy(D => D.Dia).ToList();
+                foreach (var day in service.Schedules)
+                {
+                    switch (day.Dia)
+                    {
+                        case 1:
+                            day.DiaSemana = "Segunda";
+                            break;
+                        case 2:
+                            day.DiaSemana = "Terça";
+                            break;
+                        case 3:
+                            day.DiaSemana = "Quarta";
+                            break;
+                        case 4:
+                            day.DiaSemana = "Quinta";
+                            break;
+                        case 5:
+                            day.DiaSemana = "Sexta";
+                            break;
+                        case 6:
+                            day.DiaSemana = "Sábado";
+                            break;
+                        case 7:
+                            day.DiaSemana = "Domingo";
+                            break;
+
+                        default:
+                            break;
+                    }
+                }
+            }
+        }
+        FDSetServices = FServices;
+        FDSServices = GetServices(0, 20);
+
+    }
+
+    private IEnumerable<Service> GetServices(int skip, int take)
+    {
+        return FDSetServices.Take(take).Skip(skip).ToList();
+    }
+
+
+    private void Edit(int pID)
+    {
+        if (pID > 0) _NavManager.NavigateTo("/Service/" + pID.ToString(), true);
+        else _NavManager.NavigateTo("/Service", true);
+    }
+
+    public class AgendaGrid
+    {
+        public int Dia { get; set; }
+        public string SemanaDia { get; set; }
+        public string Ini { get; set; } = "00:00";
+        public string Fim { get; set; } = "00:00";
+    }
+}
+<style>
+    h2 {
+        margin: 13% 0% 0% 25%;
+    }
+</style>

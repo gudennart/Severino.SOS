@@ -1,0 +1,183 @@
+﻿@page "/"
+
+@inject Blazored.SessionStorage.ISessionStorageService _SessionService;
+@inject NavigationManager _NavManager;
+@inject Services.IHttpService _HttpServices;
+
+@using System.Text.Json
+@using System.IO
+@using System.Text.Json.Serialization;
+
+<div class="HeaderPage">Serviços pra te salvar a qualquer momento!</div>
+
+<div style="display:flex; margin: 0 10px;">
+    <div class="SearchMenu">
+        <p>Filtros</p>
+        <RadzenTextBox Placeholder="Pesquisar" @bind-Value="FSearchText" />
+        <RadzenDropDown TValue="int" Style="margin: 10px 5px;"
+                        Data=@Categorias
+                        TextProperty="Text" ValueProperty="ID"
+                        @bind-Value="FSearchCategory"
+                        Placeholder="Categoria" />
+
+        <RadzenDropDown TValue="int" Style="margin: 10px 5px;"
+                        Data=@Tipos
+                        TextProperty="Text" ValueProperty="ID"
+                        @bind-Value="FSearchType"
+                        Placeholder="Tipo" />
+        <RadzenButton Click="Search" Text="Pesquisar" ButtonStyle="ButtonStyle.Warning" />
+    </div>
+    <div class="WrappCards">
+        <RadzenDataList WrapItems="true" AllowPaging="true" PageSize="9" @bind-Data="@FDSServices" TItem="ServiceIndex">
+            <Template Context="context">
+                <RadzenCard Style="width:25%;">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <b>Servico:</b>
+                            <div>@context.Title</div>
+                            <b style="margin-top:20px">Prestador:</b>
+                            <div>@context.User.Nome</div>
+                        </div>
+                        <div class="col-md-6">
+                            <b>Descrição:</b>
+                            <div>@context.Descricao</div>
+                        </div>
+                    </div>
+                    <div class="FooterCard">
+                        @if (context.Categoria == 1)
+                        {<i class="fas fa-car-side fa-3x"></i>}
+                        else if (context.Categoria == 2)
+                        {<i class="fas fa-motorcycle fa-3x"></i>}
+                        else if (context.Categoria == 3)
+                        {<i class="fas fa-bus fa-3x"></i>}
+                        else if (context.Categoria == 4)
+                        {<i class="fas fa-truck-pickup fa-3x"></i>}
+                        else
+                        {<i class="fas fa-truck fa-3x"></i>}
+                    </div>
+
+                </RadzenCard>
+            </Template>
+        </RadzenDataList>
+    </div>
+</div>
+<div class="InfoAdicional">
+    <div class="CardAdicionalCenter">
+        <p>Socorro descomplicado</p>
+        <p>Peça socorro de maneira ágil e descomplicada. Você pode entrar em contato direto com o prestador de serviço, vizualizar as avaliações do mesmo e os horários de atendimento de cada serviço, em cada dia da semana.</p>
+    </div>
+    <div class="CardAdicionalCenter">
+        <p>Oferta a todo instante</p>
+        <p>Oferte seus serviços com a mesma facilidade que recebe chamados. Com cadastros simples e diretos, cadastre seus serviços e esteja pronto para oferecer socorro.</p>
+    </div>
+    <div class="CardAdicionalCenter">
+        <p>Avaliação Confiável</p>
+        <p>Veja avaliações mais acertivas sobre os serviços ofertados. Por meio de revisões, e a poucos clicks de distância, avalie a credibilidade de um serviço, abra um chamado, ou reclame do mesmo.</p>
+    </div>
+</div>
+
+
+@code{
+
+    private IEnumerable<ServiceIndex> FServices { get; set; } = new List<ServiceIndex>();
+    private IEnumerable<ServiceIndex> FDSetServices { get; set; }
+    private IEnumerable<ServiceIndex> FDSServices { get; set; }
+    private int FPageSize { get; set; } = 20;
+    private int FSearchCategory { get; set; }
+    private int FSearchType { get; set; }
+    private string FSearchText { get; set; }
+
+
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var token = await _SessionService.GetItemAsync<string>("token");
+        if (token != null)
+        {
+            _NavManager.NavigateTo("/Home", true);
+        }
+        var lResp = await _HttpServices.GetAsync("/services/", null, null);
+        if (lResp.StatusCode == System.Net.HttpStatusCode.OK)
+        {
+            FServices = await JsonSerializer.DeserializeAsync<IEnumerable<ServiceIndex>>(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(lResp.Content ?? "")));
+        }
+        FDSetServices = FServices;
+        FDSServices = GetServices(0, 20);
+    }
+    private void PageChanged(PagerEventArgs args)
+    {
+        FDSServices = GetServices(args.Skip, args.Top);
+    }
+
+    private IEnumerable<ServiceIndex> GetServices(int skip, int take)
+    {
+        if (FDSetServices != null) return FDSetServices.Take(take).Skip(skip).ToList();
+        return FDSetServices;
+    }
+
+    private void Search()
+    {
+        FDSetServices = FServices;
+        if (FSearchCategory > 0)
+        {
+            FDSetServices = FDSetServices.Where(S => S.Categoria == FSearchCategory).ToList();
+        }
+        if (FSearchType > 0)
+        {
+            FDSetServices = FDSetServices.Where(S => S.Tipo == FSearchType).ToList();
+        }
+        if (FSearchText != String.Empty && FSearchText != null)
+        {
+            FDSetServices = FDSetServices.Where(S => S.Descricao.Contains(FSearchText) || S.Title.Contains(FSearchText)).ToList();
+        }
+        FDSServices = GetServices(0, 20);
+    }
+
+
+    private class ServiceIndex
+    {
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+
+        [JsonPropertyName("categoria")]
+        public int Categoria { get; set; }
+
+        [JsonPropertyName("tipo")]
+        public int Tipo { get; set; }
+
+        [JsonPropertyName("descricao")]
+        public string Descricao { get; set; }
+
+        [JsonPropertyName("titulo")]
+        public string Title { get; set; }
+
+        [JsonPropertyName("User")]
+        public Models.User User { get; set; }
+
+    }
+
+    public class Categoria
+    {
+        public int ID { get; set; }
+        public string Text { get; set; }
+    }
+
+    public List<Categoria> Categorias = new List<Categoria>()
+{
+        new Categoria{ ID=1, Text = "Automóveis"},
+        new Categoria{ ID=2, Text = "Motocicletas"},
+        new Categoria{ ID=3, Text = "Onibus e Micro-Ônibus"},
+        new Categoria{ ID=4, Text = "Caminhonetes"},
+        new Categoria{ ID=5, Text = "Caminhões"}
+    };
+
+    public List<Categoria> Tipos = new List<Categoria>()
+{
+        new Categoria{ ID=1, Text = "Mecânica"},
+        new Categoria{ ID=2, Text = "Elétrica"},
+        new Categoria{ ID=3, Text = "Transporte"},
+        new Categoria{ ID=4, Text = "Estética"},
+    };
+}

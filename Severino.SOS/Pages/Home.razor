@@ -1,0 +1,320 @@
+﻿@page "/Home"
+
+@inject Blazored.SessionStorage.ISessionStorageService _SessionService;
+@inject NavigationManager _NavManager;
+@inject Services.IHttpService _HttpServices;
+@inject DialogService DialogService
+
+@using System.Text.Json
+@using System.IO
+@using System.Text.Json.Serialization;
+
+<div class="HeaderPage">Serviços pra te salvar a qualquer momento!</div>
+
+<div style="display:flex; margin: 0 10px;">
+    <div class="SearchMenu">
+        <p>Filtros</p>
+        <RadzenTextBox Placeholder="Pesquisar" @bind-Value="FSearchText" />
+        <RadzenDropDown TValue="int" Style="margin: 10px 5px;"
+                        Data=@Categorias
+                        TextProperty="Text" ValueProperty="ID"
+                        @bind-Value="FSearchCategory"
+                        Placeholder="Categoria" />
+
+        <RadzenDropDown TValue="int" Style="margin: 10px 5px;"
+                        Data=@Tipos
+                        TextProperty="Text" ValueProperty="ID"
+                        @bind-Value="FSearchType"
+                        Placeholder="Tipo" />
+        <RadzenButton Click="Search" Text="Pesquisar" ButtonStyle="ButtonStyle.Warning" />
+    </div>
+    <div class="WrappCards">
+        <RadzenDataList WrapItems="true" AllowPaging="true" PageSize="9" @bind-Data="FDSServices" TItem="Service">
+            <Template Context="context">
+                <RadzenCard Style="width:25%;">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <b>Servico:</b>
+                            <div>@context.Title</div>
+                            <b style="margin-top:20px">Prestador:</b>
+                            <div>@context.User.Nome</div>
+
+                        </div>
+                        <div class="col-md-6">
+                            <b>Telefone</b>
+                            <div>@context.User.Whatsapp</div>
+                            <b style="margin-top:20px">Descrição:</b>
+                            <div>@context.Descricao</div>
+                        </div>
+                    </div>
+                    <div class="FooterCard">
+                        @if (context.Categoria == 1)
+                        {<i class="fas fa-car-side fa-3x"></i>}
+                        else if (context.Categoria == 2)
+                        {<i class="fas fa-motorcycle fa-3x"></i>}
+                        else if (context.Categoria == 3)
+                        {<i class="fas fa-bus fa-3x"></i>}
+                        else if (context.Categoria == 4)
+                        {<i class="fas fa-truck-pickup fa-3x"></i>}
+                        else
+                        {<i class="fas fa-truck fa-3x"></i>}
+                        <RadzenButton Click="(X => Details(context))" ButtonStyle="ButtonStyle.Warning" Style="float: left;" Icon="search" />
+                    </div>
+
+                </RadzenCard>
+            </Template>
+        </RadzenDataList>
+    </div>
+</div>
+<div class="InfoAdicional">
+    <div class="CardAdicionalCenter">
+        <p>Socorro descomplicado</p>
+        <p>Peça socorro de maneira ágil e descomplicada. Você pode entrar em contato direto com o prestador de serviço, vizualizar as avaliações do mesmo e os horários de atendimento de cada serviço, em cada dia da semana.</p>
+    </div>
+    <div class="CardAdicionalCenter">
+        <p>Oferta a todo instante</p>
+        <p>Oferte seus serviços com a mesma facilidade que recebe chamados. Com cadastros simples e diretos, cadastre seus serviços e esteja pronto para oferecer socorro.</p>
+    </div>
+    <div class="CardAdicionalCenter">
+        <p>Avaliação Confiável</p>
+        <p>Veja avaliações mais acertivas sobre os serviços ofertados. Por meio de revisões, e a poucos clicks de distância, avalie a credibilidade de um serviço, abra um chamado, ou reclame do mesmo.</p>
+    </div>
+</div>
+
+
+@code{
+
+    private IEnumerable<Service> FServices { get; set; } = new List<Service>();
+    private IEnumerable<Service> FDSetServices { get; set; }
+    private IEnumerable<Service> FDSServices { get; set; }
+    private int FSearchCategory { get; set; }
+    private int FSearchType { get; set; }
+    private int FIndex { get; set; }
+    private string FSearchText { get; set; }
+    private string FSearchCEP { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var token = await _SessionService.GetItemAsync<string>("token");
+        if (token == null)
+        {
+            _NavManager.NavigateTo("/", true);
+        }
+        var lResp = await _HttpServices.GetAsync("/services/", null, null);
+        if (lResp.StatusCode == System.Net.HttpStatusCode.OK)
+        {
+            FServices = await JsonSerializer.DeserializeAsync<IEnumerable<Service>>(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(lResp.Content ?? "")));
+        }
+        FDSetServices = FServices;
+        FDSServices = GetServices(0, 20);
+    }
+    private void PageChanged(PagerEventArgs args)
+    {
+        FDSServices = GetServices(args.Skip, args.Top);
+    }
+
+    private IEnumerable<Service> GetServices(int skip, int take)
+    {
+        return FDSetServices.Take(take).Skip(skip).ToList();
+    }
+
+    private void Search()
+    {
+        FDSetServices = FServices;
+        if (FSearchCategory > 0)
+        {
+            FDSetServices = FDSetServices.Where(S => S.Categoria == FSearchCategory).ToList();
+        }
+        if (FSearchType > 0)
+        {
+            FDSetServices = FDSetServices.Where(S => S.Tipo == FSearchType).ToList();
+        }
+        if (FSearchText != String.Empty && FSearchText != null)
+        {
+            FDSetServices = FDSetServices.Where(S => S.Descricao.Contains(FSearchText) || S.Title.Contains(FSearchText) || S.Tags.Contains(FSearchText)).ToList();
+        }
+        FDSServices = GetServices(0, 20);
+    }
+
+    private async Task Details(Service pService)
+    {
+        var lService = pService;
+        var lResp = await _HttpServices.GetAsync("/Services/" + pService.Id, null, null);
+        if (lResp.StatusCode == System.Net.HttpStatusCode.OK)
+        {
+            lService = await JsonSerializer.DeserializeAsync<Service>(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(lResp.Content ?? "")));
+        }
+
+        lService.Schedules = lService.Schedules.OrderBy(D => D.Dia).ToList();
+        foreach (var day in lService.Schedules)
+        {
+            switch (day.Dia)
+            {
+                case 1:
+                    day.DiaSemana = "Segunda";
+                    break;
+                case 2:
+                    day.DiaSemana = "Terça";
+                    break;
+                case 3:
+                    day.DiaSemana = "Quarta";
+                    break;
+                case 4:
+                    day.DiaSemana = "Quinta";
+                    break;
+                case 5:
+                    day.DiaSemana = "Sexta";
+                    break;
+                case 6:
+                    day.DiaSemana = "Sábado";
+                    break;
+                case 7:
+                    day.DiaSemana = "Domingo";
+                    break;
+
+                default:
+                    break;
+            }
+        }
+        FIndex = 0;
+        var result = await DialogService.OpenAsync(pService.Title, ds =>
+    @<div>
+        <div class="row">
+            <RadzenTabs RenderMode="TabRenderMode.Client" @bind-SelectedIndex="FIndex">
+                <Tabs>
+                    <RadzenTabsItem Text="Serviço">
+                        <div class="tabView">
+
+                            <div class="col-md-5">
+                                <b>Servico:</b>
+                                <div>@lService.Title</div>
+                                <b>Tipo:</b>
+                                <div>@Tipos.Where(T => T.ID == lService.Tipo).FirstOrDefault().Text</div>
+                                <b>Telefone</b>
+                                <div>
+                                    @lService.User.Whatsapp
+                                    <a href="@("https://api.whatsapp.com/send?phone=55"+lService.User.Whatsapp+"&text=Ol%C3%A1%2C%20te%20achei%20pelo%20Severino%20SOS.%20Pode%20me%20salvar%20%3F")"><i class="fab fa-whatsapp"></i></a>
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                @if (lService.Categoria == 1)
+                                {<i class="fas fa-car-side fa-3x"></i>}
+                                else if (lService.Categoria == 2)
+                                {<i class="fas fa-motorcycle fa-3x"></i>}
+                                else if (lService.Categoria == 3)
+                                {<i class="fas fa-bus fa-3x"></i>}
+                                else if (lService.Categoria == 4)
+                                {<i class="fas fa-truck-pickup fa-3x"></i>}
+                                else
+                                {<i class="fas fa-truck fa-3x"></i>}
+                                <br>
+                                <b>Descrição:</b>
+                                <div>@lService.Descricao</div>
+                            </div>
+                        </div>
+                    </RadzenTabsItem>
+                    <RadzenTabsItem Text="Prestador e Local">
+                        <div class="tabView">
+                            <div class="col-md-5">
+                                <b>Nome:</b>
+                                <div>@(lService.User.Nome)</div>
+                                <b>E-Mail:</b>
+                                <div>@(lService.User.Email)</div>
+                            </div>
+                            @if (lService.Address != null)
+                            {
+
+                                <div class="col-md-5">
+                                    <b>Cidade:</b>
+                                    <div>@(lService.Address.Localidade + " - " + pService.Address.Cep)</div>
+                                    <b>Logradouro:</b>
+                                    <div>@(lService.Address.Logradouro + " N° " + pService.Address.Numero)</div>
+                                    <b>Bairro</b>
+                                    <div>@(lService.Address.Bairro)</div>
+                                    <b>Complemento</b>
+                                    <div>@lService.Address.Complemento</div>
+                                </div>
+                            }
+                            else
+                            {
+                                <h2>Serviço de Campo*</h2>
+                            }
+                        </div>
+                    </RadzenTabsItem>
+                    <RadzenTabsItem Text="Agenda">
+                        <RadzenDataGrid AllowFiltering="true" AllowPaging="true" AllowSorting="true" Data="@lService.Schedules" TItem="Schedule" EmptyText="Serviço Sem Agenda Fixa**">
+                            <Columns>
+                                <RadzenDataGridColumn TItem="Schedule" Property="DiaSemana" Title="Dia da Semana"></RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="Schedule" Property="De" Title="Inicio"></RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="Schedule" Property="Ate" Title="Termino"></RadzenDataGridColumn>
+
+                            </Columns>
+                        </RadzenDataGrid>
+                    </RadzenTabsItem>
+                    <RadzenTabsItem Text="Avaliações">
+                        @if (lService.Assessments.Count > 0)
+                        {
+
+                            <h2> Nota Média : @lService.Assessments.Average(A => A.Nota)</h2>
+                            @foreach (var aval in lService.Assessments)
+                            {
+                                var ListText = aval.Conteudo.Split('|').ToList();
+                                <RadzenCard>
+                                    <div class="AvalHeader">
+                                        @ListText[0]
+                                    </div>
+                                    <p>@ListText[1]</p>
+                                </RadzenCard>
+                                }
+                            }
+                        else
+                        {
+                            <h2> Sem avaliações deste serviço ainda.</h2>
+                        }
+                    </RadzenTabsItem>
+
+                </Tabs>
+            </RadzenTabs>
+            @if (lService.Address == null)
+            {<div>* Serviços de campo são serviços realizados sem um endereço fixo, mediante a demanda do cliente.</div>}
+            @if (!lService.Schedules.Any())
+            {<div>** Serviços sem agenda fixa não detém um horário definido de atendimento.</div>}
+        </div>
+    </div>
+
+
+    );
+    }
+
+    public class Categoria
+    {
+        public int ID { get; set; }
+        public string Text { get; set; }
+    }
+
+    public List<Categoria> Categorias = new List<Categoria>()
+{
+        new Categoria{ ID=1, Text = "Automóveis"},
+        new Categoria{ ID=2, Text = "Motocicletas"},
+        new Categoria{ ID=3, Text = "Onibus e Micro-Ônibus"},
+        new Categoria{ ID=4, Text = "Caminhonetes"},
+        new Categoria{ ID=5, Text = "Caminhões"}
+    };
+
+    public List<Categoria> Tipos = new List<Categoria>()
+{
+        new Categoria{ ID=1, Text = "Mecânica"},
+        new Categoria{ ID=2, Text = "Elétrica"},
+        new Categoria{ ID=3, Text = "Transporte"},
+        new Categoria{ ID=4, Text = "Estética"},
+    };
+    public List<Categoria> Semana = new List<Categoria>()
+{
+        new Categoria{ ID=1, Text = "Segunda"},
+        new Categoria{ ID=2, Text = "Terça"},
+        new Categoria{ ID=3, Text = "Quarta"},
+        new Categoria{ ID=4, Text = "Quinta"},
+        new Categoria{ ID=4, Text = "Sexta"},
+        new Categoria{ ID=4, Text = "Sábado"},
+    };
+}

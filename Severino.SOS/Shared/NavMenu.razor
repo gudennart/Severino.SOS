@@ -1,0 +1,59 @@
+﻿@inject NavigationManager _NavManager;
+@inject Blazored.SessionStorage.ISessionStorageService _SessionService;
+    <div style="display: flex; align-items: center;">
+        <img src="./Images/Icon.png" style="max-height:50px;" />
+        <div class="top-row pl-4 navbar navbar-dark">
+
+            <a class="navbar-brand" href="">Severino SOS</a>
+            <button class="navbar-toggler" @onclick="ToggleNavMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
+    </div>
+
+    <div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
+        <RadzenButton style="margin-bottom: 16px" Class="BtnMenu" Click=@(args => OnClick("/About")) Text="Sobre" ButtonStyle="ButtonStyle.Warning" />
+        <RadzenButton style="margin-bottom: 16px" Class="BtnMenu" Click=@(args => OnClick("/User")) Text="Cadastro" ButtonStyle="ButtonStyle.Warning" />
+        @if (!Logged)
+        {
+            <RadzenButton style="margin-bottom: 16px" Class="BtnMenu" Click=@(args => OnClick("/Login")) Text="Login" ButtonStyle="ButtonStyle.Warning" />
+        }
+        else
+        {
+            <RadzenButton style="margin-bottom: 16px" Class="BtnMenu" Click=@(args => OnClick("/MyServices")) Text="Meus Serviços" ButtonStyle="ButtonStyle.Warning" />
+            <RadzenButton style="margin-bottom: 16px" Class="BtnMenu" Click=@Logout Text="Logout" ButtonStyle="ButtonStyle.Warning" />
+        }
+    </div>
+
+    @code {
+        private bool collapseNavMenu = true;
+        private bool Logged { get; set; } = false;
+
+        private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+        protected override async Task OnInitializedAsync()
+        {
+            Logged = (await _SessionService.GetItemAsync<string>("token") != null);
+        }
+
+        private void ToggleNavMenu()
+        {
+            collapseNavMenu = !collapseNavMenu;
+        }
+
+        void OnClick(string buttonName)
+        {
+            _NavManager.NavigateTo(buttonName, true);
+        }
+        private async Task Logout()
+        {
+            await _SessionService.RemoveItemAsync("token");
+            _NavManager.NavigateTo("", true);
+        }
+    }
+    <style>
+        img {
+            float: left;
+            text-align: center;
+        }
+    </style>

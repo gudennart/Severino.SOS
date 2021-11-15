@@ -1,0 +1,13 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager _NavManager;
+@if (!_NavManager.Uri.Contains("/Login"))
+{
+    <div class="Menu">
+        <NavMenu />
+    </div>
+}
+<RadzenNotification />
+<RadzenDialog />
+<div class="main">
+    @Body
+</div>

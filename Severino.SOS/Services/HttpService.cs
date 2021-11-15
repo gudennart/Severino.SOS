@@ -66,9 +66,7 @@ namespace Severino.SOS.Services
 
             resp.StatusCode = result.StatusCode;
             if (result.StatusCode == HttpStatusCode.OK || result.StatusCode == HttpStatusCode.NoContent || result.StatusCode == HttpStatusCode.Accepted)
-            {
                 resp.Content = await result.Content.ReadAsStringAsync();
-            }
             return resp;
         }
 
@@ -102,10 +100,7 @@ namespace Severino.SOS.Services
             var StringBody = new StringContent(stringObj, Encoding.UTF8, "application/json");
             var result = await _HttpClient.PutAsync(URL, StringBody);
             resp.StatusCode = result.StatusCode;
-            if (result.StatusCode == HttpStatusCode.OK || result.StatusCode == HttpStatusCode.NoContent || result.StatusCode == HttpStatusCode.Accepted)
-            {
-                resp.Content = await result.Content.ReadAsStringAsync();
-            }
+            resp.Content = await result.Content.ReadAsStringAsync();
             return resp;
         }
 

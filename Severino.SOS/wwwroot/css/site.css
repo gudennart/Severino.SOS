@@ -84,23 +84,28 @@ a, .btn-link {
     border-radius: 10px;
     margin: 5px;
     width: 20%;
-    max-height: 500px;
 }
 
-    .SearchMenu p {
-        line-height: 1.38;
-        color: lightgrey;
-        text-align: center;
-        font-size: larger;
-        font-weight: bolder;
-    }
+.SearchMenu p {
+    line-height: 1.38;
+    color: lightgrey;
+    text-align: center;
+    font-size: larger;
+    font-weight: bolder;
+}
 
-    .SearchMenu input {
-        margin: 10px 5px;
-    }
-    .SearchMenu button {
-        margin-block-start: auto;
-    }
+.SearchMenu input {
+    margin: 10px 5px;
+}
+
+.SearchMenu div {
+    margin-block-start: auto;
+}
+
+.SearchMenu div button {
+    width: -webkit-fill-available;
+    margin: 5px;
+}
 
 .WrappCards {
     min-height: 500px;
@@ -109,10 +114,12 @@ a, .btn-link {
     margin: 5px;
     width: 80%;
 }
+
 .InfoAdicional {
     display: flex;
     margin: 20px 0;
 }
+
 .CardAdicionalLeft {
     border: solid 3px #7935CF;
     border-radius: 10px;
@@ -121,6 +128,7 @@ a, .btn-link {
     background-color: #FAC12E;
     color: #2F054E;
 }
+
 .CardAdicionalCenter {
     border: solid 3px #7935CF;
     border-radius: 10px;
@@ -129,6 +137,7 @@ a, .btn-link {
     background-color: #FAC12E;
     color: #2F054E;
 }
+
 .CardAdicionalRight {
     border: solid 3px #7935CF;
     border-radius: 10px;
@@ -137,21 +146,26 @@ a, .btn-link {
     background-color: #FAC12E;
     color: #2F054E;
 }
-.CardAdicionalLeft p:first-child{
+
+.CardAdicionalLeft p:first-child {
     font-size: 25px;
     text-align: left;
 }
+
 .CardAdicionalCenter p:first-child {
     font-size: 25px;
     text-align: center;
 }
+
 .CardAdicionalRight p:first-child {
     font-size: 25px;
     text-align: right;
 }
+
 .CardAdicionalRight p:nth-child(2), .CardAdicionalLeft p:nth-child(2), .CardAdicionalCenter p:nth-child(2) {
     text-align: justify;
 }
+
 .LoginWrapper {
     width: 100vw;
     height: fit-content;
@@ -159,36 +173,41 @@ a, .btn-link {
     background-color: #7935CF;
     text-align: center;
 }
+
 .InputWrapper {
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-.InputWrapper input{
-    margin: 10px 0;
-    width: 20%;
-}
+    .InputWrapper input {
+        margin: 10px 0;
+        width: 20%;
+    }
+
 .LoginWrapper img {
     max-width: 50%;
     max-height: 50%;
     margin-top: -50px;
 }
+
 .Wrapper {
     margin: 20px 0;
 }
-.Wrapper img {
-    background-color: #7935CF;
-    border-radius: 5px;
-    max-height: 80vh;
-}
+
+    .Wrapper img {
+        background-color: #7935CF;
+        border-radius: 5px;
+        max-height: 80vh;
+    }
+
 .tabView {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.rz-tabview{
+.rz-tabview {
     width: 95vh;
 }
 
@@ -198,33 +217,37 @@ a, .btn-link {
     width: -webkit-fill-available;
     margin: 5px;
     margin-right: 35px;
-    text-align: end;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .row {
     margin-bottom: 35px;
     height: 80%;
 }
-.AddButton{
-    margin:10px;
+
+.AddButton {
+    margin: 10px;
 }
+
 .DiaItem {
     display: flex;
     align-items: baseline;
     justify-content: space-evenly;
 }
 
-.PlusButton{
-    width:80%;
+.PlusButton {
+    width: 80%;
     margin: 20px 10%;
 }
 
-.CEPDiv{
-    display:flex;
+.CEPDiv {
+    display: flex;
 }
 
-.icons{
-    display:flex;
+.icons {
+    display: flex;
     flex-direction: column;
-    justify-content:space-evenly
+    justify-content: space-evenly
 }

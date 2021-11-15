@@ -11,6 +11,20 @@
 
 <div class="HeaderPage">Serviços pra te salvar a qualquer momento!</div>
 
+<div class="InfoAdicional">
+    <div class="CardAdicionalCenter">
+        <p>Socorro descomplicado</p>
+        <p>Peça socorro de maneira ágil e descomplicada. Você pode entrar em contato direto com o prestador de serviço, vizualizar as avaliações do mesmo e os horários de atendimento de cada serviço, em cada dia da semana.</p>
+    </div>
+    <div class="CardAdicionalCenter">
+        <p>Oferta a todo instante</p>
+        <p>Oferte seus serviços com a mesma facilidade que recebe chamados. Com cadastros simples e diretos, cadastre seus serviços e esteja pronto para oferecer socorro.</p>
+    </div>
+    <div class="CardAdicionalCenter">
+        <p>Avaliação Confiável</p>
+        <p>Veja avaliações mais acertivas sobre os serviços ofertados. Por meio de revisões, e a poucos clicks de distância, avalie a credibilidade de um serviço, abra um chamado, ou reclame do mesmo.</p>
+    </div>
+</div>
 <div style="display:flex; margin: 0 10px;">
     <div class="SearchMenu">
         <p>Filtros</p>
@@ -26,7 +40,10 @@
                         TextProperty="Text" ValueProperty="ID"
                         @bind-Value="FSearchType"
                         Placeholder="Tipo" />
-        <RadzenButton Click="Search" Text="Pesquisar" ButtonStyle="ButtonStyle.Warning" />
+        <div>
+            <RadzenButton Click="Clear" Text="Limpar" ButtonStyle="ButtonStyle.Warning" />
+            <RadzenButton Click="Search" Text="Pesquisar" ButtonStyle="ButtonStyle.Warning" />
+        </div>
     </div>
     <div class="WrappCards">
         <RadzenDataList WrapItems="true" AllowPaging="true" PageSize="9" @bind-Data="FDSServices" TItem="Service">
@@ -56,28 +73,16 @@
                         {<i class="fas fa-bus fa-3x"></i>}
                         else if (context.Categoria == 4)
                         {<i class="fas fa-truck-pickup fa-3x"></i>}
-                        else
+                        else if (context.Categoria == 5)
                         {<i class="fas fa-truck fa-3x"></i>}
+                        else
+                        {<i class="fas fa-tools fa-3x"></i>}
                         <RadzenButton Click="(X => Details(context))" ButtonStyle="ButtonStyle.Warning" Style="float: left;" Icon="search" />
                     </div>
 
                 </RadzenCard>
             </Template>
         </RadzenDataList>
-    </div>
-</div>
-<div class="InfoAdicional">
-    <div class="CardAdicionalCenter">
-        <p>Socorro descomplicado</p>
-        <p>Peça socorro de maneira ágil e descomplicada. Você pode entrar em contato direto com o prestador de serviço, vizualizar as avaliações do mesmo e os horários de atendimento de cada serviço, em cada dia da semana.</p>
-    </div>
-    <div class="CardAdicionalCenter">
-        <p>Oferta a todo instante</p>
-        <p>Oferte seus serviços com a mesma facilidade que recebe chamados. Com cadastros simples e diretos, cadastre seus serviços e esteja pronto para oferecer socorro.</p>
-    </div>
-    <div class="CardAdicionalCenter">
-        <p>Avaliação Confiável</p>
-        <p>Veja avaliações mais acertivas sobre os serviços ofertados. Por meio de revisões, e a poucos clicks de distância, avalie a credibilidade de um serviço, abra um chamado, ou reclame do mesmo.</p>
     </div>
 </div>
 
@@ -191,10 +196,13 @@
                                 <b>Tipo:</b>
                                 <div>@Tipos.Where(T => T.ID == lService.Tipo).FirstOrDefault().Text</div>
                                 <b>Telefone</b>
-                                <div>
-                                    @lService.User.Whatsapp
-                                    <a href="@("https://api.whatsapp.com/send?phone=55"+lService.User.Whatsapp+"&text=Ol%C3%A1%2C%20te%20achei%20pelo%20Severino%20SOS.%20Pode%20me%20salvar%20%3F")"><i class="fab fa-whatsapp"></i></a>
-                                </div>
+                                <a target="_blank" href="@("https://api.whatsapp.com/send?phone=55"+lService.User.Whatsapp
+                                                               +"&text=Ol%C3%A1%2C%20te%20achei%20pelo%20Severino%20SOS.%20Pode%20me%20salvar%20%3F")">
+                                    <RadzenButton ButtonStyle="ButtonStyle.Warning" Style="height:fit-content;">
+                                        Entre em contato
+                                        <i class="fab fa-whatsapp fa-2x"></i>
+                                    </RadzenButton>
+                                </a>
                             </div>
                             <div class="col-md-5">
                                 @if (lService.Categoria == 1)
@@ -205,8 +213,10 @@
                                 {<i class="fas fa-bus fa-3x"></i>}
                                 else if (lService.Categoria == 4)
                                 {<i class="fas fa-truck-pickup fa-3x"></i>}
-                                else
+                                else if (lService.Categoria == 5)
                                 {<i class="fas fa-truck fa-3x"></i>}
+                                else
+                                {<i class="fas fa-tools fa-3x"></i>}
                                 <br>
                                 <b>Descrição:</b>
                                 <div>@lService.Descricao</div>
@@ -265,8 +275,8 @@
                                     </div>
                                     <p>@ListText[1]</p>
                                 </RadzenCard>
-                                }
                             }
+                        }
                         else
                         {
                             <h2> Sem avaliações deste serviço ainda.</h2>
@@ -286,6 +296,14 @@
     );
     }
 
+    public void Clear()
+    {
+        FSearchCategory = 0;
+        FSearchType = 0;
+        FSearchText = String.Empty;
+        Search();
+    }
+
     public class Categoria
     {
         public int ID { get; set; }
@@ -298,7 +316,8 @@
         new Categoria{ ID=2, Text = "Motocicletas"},
         new Categoria{ ID=3, Text = "Onibus e Micro-Ônibus"},
         new Categoria{ ID=4, Text = "Caminhonetes"},
-        new Categoria{ ID=5, Text = "Caminhões"}
+        new Categoria{ ID=5, Text = "Caminhões"},
+        new Categoria{ ID=6, Text = "Geral"}
     };
 
     public List<Categoria> Tipos = new List<Categoria>()
@@ -307,6 +326,7 @@
         new Categoria{ ID=2, Text = "Elétrica"},
         new Categoria{ ID=3, Text = "Transporte"},
         new Categoria{ ID=4, Text = "Estética"},
+        new Categoria{ ID=5, Text = "Borracharia"},
     };
     public List<Categoria> Semana = new List<Categoria>()
 {

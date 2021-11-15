@@ -43,7 +43,7 @@
                     <div>Tags:</div>
                     <div style="display:flex; align-items: center; justify-content:space-evenly">
                         <RadzenTextBox @bind-Value="TagIt" />
-                        <RadzenButton Click=@(args => { Tags.Add(TagIt); TagIt = string.Empty; }) Text="+" ButtonStyle="ButtonStyle.Warning" Style="margin:5px" />
+                        <RadzenButton Click=@(args => { if (TagIt != String.Empty) { Tags.Add(TagIt); TagIt = string.Empty; } }) Text="+" ButtonStyle="ButtonStyle.Warning" Style="margin:5px" />
                     </div>
                     <div class="CardArea" style="display:flex; flex-wrap: wrap;">
                         @foreach (var tag in Tags)
@@ -178,7 +178,8 @@
         new Categoria{ ID=2, Text = "Motocicletas"},
         new Categoria{ ID=3, Text = "Onibus e Micro-Ônibus"},
         new Categoria{ ID=4, Text = "Caminhonetes"},
-        new Categoria{ ID=5, Text = "Caminhões"}
+        new Categoria{ ID=5, Text = "Caminhões"},
+        new Categoria{ ID=6, Text = "Geral"},
     };
 
     public List<Categoria> Tipos = new List<Categoria>()
@@ -187,6 +188,7 @@
         new Categoria{ ID=2, Text = "Elétrica"},
         new Categoria{ ID=3, Text = "Transporte"},
         new Categoria{ ID=4, Text = "Estética"},
+        new Categoria{ ID=5, Text = "Borracharia"},
     };
 
     private List<string> UFs = new List<string>
@@ -318,11 +320,11 @@
             if (resp2.StatusCode == HttpStatusCode.OK)
             {
                 ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Endereço Atualizado", Detail = "Endereço atualizado com Sucesso", Duration = 4000 });
-                FIndex = 0;
+                _navigationManager.NavigateTo("/", true);
             }
-            else ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Erro de atualização", Detail = "Ocorreram erros na atualização", Duration = 4000 });
+            else ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Erro de atualização", Detail = "Ocorreram erros na atualização: "+ resp2.Content, Duration = 4000 });
         }
-        FIndex = 0;
+        _navigationManager.NavigateTo("/MyServices", true);
     }
 
     private async Task SendAgenda()
@@ -337,11 +339,32 @@
                 service_id = service.Id.ToString()
             };
             if ((dia.Ini == "00:00" && dia.Fim == "00:00") || dia.Ini == null || dia.Fim == null) continue;
+            if (!ValidaHora(dia.Ini) || !ValidaHora(dia.Ini))
+            {
+                ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Erro de Cadastro", Detail = "Horario Inválido", Duration = 4000 });
+                continue;
+            }
             if (dia.id > 0) await _HttpService.PutAsync("schedules", dia.id.ToString(), Obj, null);
             else await _HttpService.PostAsync("schedules", Obj, null);
         }
         EndTabDisable = false;
         FIndex = 2;
+    }
+
+    public static bool ValidaHora(string maskhora)
+    {
+        List<string> hms = maskhora.Split(':').ToList();
+        int horas = Int32.Parse(hms[0]);
+        int minutos = Int32.Parse(hms[1]);
+        if (horas > 24 || minutos > 59)
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+
     }
 
     private async Task Search()
@@ -355,7 +378,8 @@
             var resp = await _HttpService.GetAsync("address", null, CEPObj);
             if (resp.StatusCode == HttpStatusCode.OK)
             {
-                FAddress = await JsonSerializer.DeserializeAsync<Address>(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(resp.Content ?? "")));
+                FAddress = await JsonSerializer.DeserializeAsync<Address>
+    (new MemoryStream(System.Text.Encoding.UTF8.GetBytes(resp.Content ?? "")));
             }
         }
 

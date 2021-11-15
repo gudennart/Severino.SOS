@@ -20,7 +20,7 @@
                     <div>Nome:</div>
                     <RadzenTextBox @bind-Value="FUser.Nome"></RadzenTextBox>
                     <div>WhatsApp:</div>
-                    <RadzenTextBox @bind-Value="FUser.Whatsapp"></RadzenTextBox>
+                    <RadzenMask @bind-Value="FUser.Whatsapp" Mask="***********" Pattern="[^0-9]" Placeholder="99 999999999"></RadzenMask>
                     <div>E-mail::</div>
                     <RadzenTextBox @bind-Value="FUser.Email"></RadzenTextBox>
                     <div>Senha:</div>
@@ -146,7 +146,7 @@
             EndTabDisable = false;
             FIndex = 1;
         }
-        else ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Erro de atualização", Detail = "Ocorreram erros na atualização", Duration = 4000 });
+        else ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Erro de atualização: "+resp1.Content, Detail = "Ocorreram erros na atualização", Duration = 4000 });
     }
     private async Task SendAddres()
     {
@@ -173,8 +173,9 @@
         if (resp2.StatusCode == HttpStatusCode.OK)
         {
             ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Endereço Atualizado", Detail = "Endereço atualizado com Sucesso", Duration = 4000 });
+            _navigationManager.NavigateTo("/Login", true);
         }
-        else ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Erro de atualização", Detail = "Ocorreram erros na atualização", Duration = 4000 });
+        else ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Erro de atualização: "+ resp2.Content, Detail = "Ocorreram erros na atualização", Duration = 4000 });
     }
     private async Task Search()
     {

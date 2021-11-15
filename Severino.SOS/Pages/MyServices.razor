@@ -37,8 +37,10 @@
                                     {<i class="fas fa-bus fa-3x"></i>}
                                     else if (context.Categoria == 4)
                                     {<i class="fas fa-truck-pickup fa-3x"></i>}
-                                    else
+                                    else if (context.Categoria == 5)
                                     {<i class="fas fa-truck fa-3x"></i>}
+                                    else
+                                    {<i class="far fa-tools fa-3x"></i>}
                                 </div>
                                 <div class="col-md-5">
                                     <b>Descrição:</b>
@@ -118,7 +120,8 @@
         new Categoria{ ID=2, Text = "Motocicletas"},
         new Categoria{ ID=3, Text = "Onibus e Micro-Ônibus"},
         new Categoria{ ID=4, Text = "Caminhonetes"},
-        new Categoria{ ID=5, Text = "Caminhões"}
+        new Categoria{ ID=5, Text = "Caminhões"},
+        new Categoria{ ID=6, Text = "Geral"}
     };
 
     public List<Categoria> Tipos = new List<Categoria>()
@@ -127,6 +130,7 @@
         new Categoria{ ID=2, Text = "Elétrica"},
         new Categoria{ ID=3, Text = "Transporte"},
         new Categoria{ ID=4, Text = "Estética"},
+        new Categoria{ ID=5, Text = "Borracharia"},
     };
 
     protected override async Task OnInitializedAsync()

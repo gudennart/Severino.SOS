@@ -92,11 +92,16 @@
     private IEnumerable<Service> FServices { get; set; } = new List<Service>();
     private IEnumerable<Service> FDSetServices { get; set; }
     private IEnumerable<Service> FDSServices { get; set; }
+    private Assessment MAssessment { get; set; } = new();
+    private User FUser { get; set; }
     private int FSearchCategory { get; set; }
     private int FSearchType { get; set; }
     private int FIndex { get; set; }
+    private int FStar { get; set; }
     private string FSearchText { get; set; }
     private string FSearchCEP { get; set; }
+    private string FComment { get; set; }
+    private bool FAddAsses = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -105,10 +110,15 @@
         {
             _NavManager.NavigateTo("/", true);
         }
-        var lResp = await _HttpServices.GetAsync("/services/", null, null);
-        if (lResp.StatusCode == System.Net.HttpStatusCode.OK)
+        var resp = await _HttpServices.GetAsync("users", null, null);
+        if (resp.StatusCode == System.Net.HttpStatusCode.OK)
         {
-            FServices = await JsonSerializer.DeserializeAsync<IEnumerable<Service>>(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(lResp.Content ?? "")));
+            FUser = await JsonSerializer.DeserializeAsync<User>(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(resp.Content ?? "")));
+        }
+        resp = await _HttpServices.GetAsync("/services/", null, null);
+        if (resp.StatusCode == System.Net.HttpStatusCode.OK)
+        {
+            FServices = await JsonSerializer.DeserializeAsync<IEnumerable<Service>>(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(resp.Content ?? "")));
         }
         FDSetServices = FServices;
         FDSServices = GetServices(0, 20);
@@ -149,7 +159,9 @@
         {
             lService = await JsonSerializer.DeserializeAsync<Service>(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(lResp.Content ?? "")));
         }
-
+        MAssessment = lService.Assessments.Where(A => A.UserId == FUser.Id).FirstOrDefault();
+        if (MAssessment == null) MAssessment = new();
+        MAssessment.ServiceId = lService.Id;
         lService.Schedules = lService.Schedules.OrderBy(D => D.Dia).ToList();
         foreach (var day in lService.Schedules)
         {
@@ -265,22 +277,35 @@
                         @if (lService.Assessments.Count > 0)
                         {
 
-                            <h2> Nota Média : @lService.Assessments.Average(A => A.Nota)</h2>
-                            @foreach (var aval in lService.Assessments)
-                            {
-                                var ListText = aval.Conteudo.Split('|').ToList();
-                                <RadzenCard>
-                                    <div class="AvalHeader">
-                                        @ListText[0]
-                                    </div>
-                                    <p>@ListText[1]</p>
-                                </RadzenCard>
-                            }
+                            <div>
+                                <h2> Nota Média : @lService.Assessments.Average(A => A.Nota)</h2>
+                            </div>
                         }
-                        else
+                        <RadzenCard Style="margin:5px;">
+                            <div>Avaliador:</div>
+                            <RadzenTextBox @bind-Value="FUser.Nome" Disabled="true" />
+
+                            <div>Comentário:</div>
+                            <RadzenTextBox @bind-Value="FComment" />
+
+                            <div>Nota:</div>
+                            <RadzenRating Stars="5" @bind-Value="FStar" />
+                            <RadzenButton Click="PostAssessments" ButtonStyle="ButtonStyle.Warning" Text="Avaliar"> </RadzenButton>
+                        </RadzenCard>
+                        @foreach (var aval in lService.Assessments)
                         {
-                            <h2> Sem avaliações deste serviço ainda.</h2>
+                            var ListText = aval.Conteudo.Split('|').ToList();
+                            <RadzenCard Style="margin:5px;">
+                                <h3 class="AvalHeader">
+                                    @ListText[0]
+                                </h3>
+                                <p>@ListText[1]</p>
+
+                                <RadzenRating Stars="5" @bind-Value="aval.Nota" />
+                            </RadzenCard>
                         }
+
+
                     </RadzenTabsItem>
 
                 </Tabs>
@@ -294,6 +319,29 @@
 
 
     );
+    }
+
+    public async Task PostAssessments()
+    {
+        var Obj = new object();
+        var resp = new Response();
+        Obj = new
+        {
+            nota = FStar.ToString(),
+            conteudo = FUser.Nome + "|" + FComment,
+            service_id = MAssessment.ServiceId.ToString()
+        };
+        if (MAssessment.Id > 0)
+        {
+
+            resp = await _HttpServices.PutAsync("assessments", MAssessment.Id.ToString(), Obj, null);
+        }
+        else
+        {
+            resp = await _HttpServices.PostAsync("assessments", Obj, null);
+        }
+        FStar = 0;
+        FComment = "";
     }
 
     public void Clear()

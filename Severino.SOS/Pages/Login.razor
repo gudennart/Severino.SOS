@@ -29,7 +29,7 @@
         if (await SessionStorage.GetItemAsync<string>("token") == null)
             await base.OnAfterRenderAsync(firstRender);
         else
-            _navigationManager.NavigateTo("", true);
+            _navigationManager.NavigateTo("/Home", true);
     }
 
     private async Task Submit()

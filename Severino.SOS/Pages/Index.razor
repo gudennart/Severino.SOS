@@ -24,7 +24,7 @@
         <p>Veja avaliações mais acertivas sobre os serviços ofertados. Por meio de revisões, e a poucos clicks de distância, avalie a credibilidade de um serviço, abra um chamado, ou reclame do mesmo.</p>
     </div>
 </div>
-<div style="display:flex; margin: 0 10px;">
+<div class="NormalArea">
     <div class="SearchMenu">
         <p>Filtros</p>
         <RadzenTextBox Placeholder="Pesquisar" @bind-Value="FSearchText" />
@@ -47,36 +47,35 @@
     <div class="WrappCards">
         <RadzenDataList WrapItems="true" AllowPaging="true" PageSize="9" @bind-Data="@FDSServices" TItem="ServiceIndex">
             <Template Context="context">
-                <RadzenCard Style="width:25%;">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <b>Servico:</b>
-                            <div>@context.Title</div>
-                            <b style="margin-top:20px">Prestador:</b>
-                            <div>@context.User.Nome</div>
+                    <RadzenCard>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <b>Servico:</b>
+                                <div>@context.Title</div>
+                                <b style="margin-top:20px">Prestador:</b>
+                                <div>@context.User.Nome</div>
+                            </div>
+                            <div class="col-md-6">
+                                <b>Descrição:</b>
+                                <div>@context.Descricao</div>
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <b>Descrição:</b>
-                            <div>@context.Descricao</div>
+                        <div class="FooterCard">
+                            <RadzenButton Click="(A => _NavManager.NavigateTo(Login))" Text="Logue-se" ButtonStyle="ButtonStyle.Warning"></RadzenButton>
+                            @if (context.Categoria == 1)
+                            {<i class="fas fa-car-side fa-3x"></i>}
+                            else if (context.Categoria == 2)
+                            {<i class="fas fa-motorcycle fa-3x"></i>}
+                            else if (context.Categoria == 3)
+                            {<i class="fas fa-bus fa-3x"></i>}
+                            else if (context.Categoria == 4)
+                            {<i class="fas fa-truck-pickup fa-3x"></i>}
+                            else if (context.Categoria == 5)
+                            {<i class="fas fa-truck fa-3x"></i>}
+                            else
+                            {<i class="fas fa-tools fa-3x"></i>}
                         </div>
-                    </div>
-                    <div class="FooterCard">
-                        <RadzenButton Click="(A => _NavManager.NavigateTo(Login))" Text="Logue-se Para Mais Infos" ButtonStyle="ButtonStyle.Warning"></RadzenButton>
-                        @if (context.Categoria == 1)
-                        {<i class="fas fa-car-side fa-3x"></i>}
-                        else if (context.Categoria == 2)
-                        {<i class="fas fa-motorcycle fa-3x"></i>}
-                        else if (context.Categoria == 3)
-                        {<i class="fas fa-bus fa-3x"></i>}
-                        else if (context.Categoria == 4)
-                        {<i class="fas fa-truck-pickup fa-3x"></i>}
-                        else if (context.Categoria == 5)
-                        {<i class="fas fa-truck fa-3x"></i>}
-                        else
-                        {<i class="fas fa-tools fa-3x"></i>}
-                    </div>
-
-                </RadzenCard>
+                    </RadzenCard>
             </Template>
         </RadzenDataList>
     </div>
@@ -199,3 +198,16 @@
         new Categoria{ ID=5, Text = "Borracharia"},
     };
 }
+<style>
+    .rz-card, .card {
+        width: 92vw;
+        max-width: 350px;
+        min-width: 300px;
+        min-height: 200px;
+        height: fit-content;
+    }
+
+    .row {
+        flex-wrap: nowrap;
+    }
+</style>

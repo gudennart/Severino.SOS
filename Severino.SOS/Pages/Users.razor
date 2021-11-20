@@ -29,6 +29,10 @@
                     <RadzenPassword @bind-Value="ConfirmPass"></RadzenPassword>
                     <div style="text-align:center;">
                         <RadzenButton Click="SendUser" ButtonStyle="ButtonStyle.Warning" Text="Salvar" Style="margin: 10px 0; width:200px"></RadzenButton>
+                        @if (FUser.Id > 0)
+                        {
+                            <RadzenButton Click="DeleteUser" ButtonStyle="ButtonStyle.Danger" Text="Excluir" Style="margin: 10px 0; width:200px"></RadzenButton>
+                        }
                     </div>
 
                 </RadzenTabsItem>
@@ -103,8 +107,7 @@
                 nome = FUser.Nome,
                 email = FUser.Email,
                 whatsapp = FUser.Whatsapp,
-                password = Pass,
-                is_proff = FUser.IsProff ? "true" : "false"
+                password = Pass
             };
         }
         else
@@ -114,7 +117,6 @@
                 nome = FUser.Nome,
                 email = FUser.Email,
                 whatsapp = FUser.Whatsapp,
-                is_proff = FUser.IsProff ? "true" : "false"
             };
         }
         if (FUser.Id == 0)
@@ -146,7 +148,7 @@
             EndTabDisable = false;
             FIndex = 1;
         }
-        else ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Erro de atualização: "+resp1.Content, Detail = "Ocorreram erros na atualização", Duration = 4000 });
+        else ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Erro de atualização: " + resp1.Content, Detail = "Ocorreram erros na atualização", Duration = 4000 });
     }
     private async Task SendAddres()
     {
@@ -161,7 +163,6 @@
             uf = FAddress.Uf,
             cep = FAddress.Cep,
             complemento = FAddress.Complemento == null ? string.Empty : FAddress.Complemento,
-            is_proff = FAddress.IsProff ? "true" : "false"
         };
         if (FAddress.Id == 0)
         {
@@ -175,7 +176,7 @@
             ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Endereço Atualizado", Detail = "Endereço atualizado com Sucesso", Duration = 4000 });
             _navigationManager.NavigateTo("/Login", true);
         }
-        else ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Erro de atualização: "+ resp2.Content, Detail = "Ocorreram erros na atualização", Duration = 4000 });
+        else ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Erro de atualização: " + resp2.Content, Detail = "Ocorreram erros na atualização", Duration = 4000 });
     }
     private async Task Search()
     {
@@ -194,10 +195,19 @@
         }
 
     }
+
     private void ShowNotification(NotificationMessage message)
     {
         NotificationService.Notify(message);
     }
+
+    public async Task DeleteUser()
+    {
+        await _HttpService.DeleteAsync("users", null);
+        await _SessionStorage.RemoveItemAsync("token");
+        _navigationManager.NavigateTo("/", true);
+    }
+
     public class TokenResponse
     {
         public string token { get; set; }
@@ -209,7 +219,19 @@
         display: flex;
         justify-content: space-around;
     }
+
     .rz-colorpicker, .rz-lookup-search input, .rz-spinner, .rz-calendar .rz-inputtext, .rz-multiselect, .rz-dropdown, .mask, .rz-textarea, .rz-textbox {
         width: -webkit-fill-available !important;
+    }
+
+    @@media (max-width: 750px) {
+        .rz-tabview-panels {
+            width: 100vw;
+        }
+        .Wrapper img {
+            
+            display:none;
+        }
+
     }
 </style>

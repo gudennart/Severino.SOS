@@ -72,8 +72,9 @@ a, .btn-link {
     display: flex !important;
     justify-content: space-between;
     text-align: center;
-    align-items: baseline;
+    align-items: center;
     margin: 0 20px;
+    flex-wrap: wrap;
 }
 
 .SearchMenu {
@@ -86,26 +87,26 @@ a, .btn-link {
     width: 20%;
 }
 
-.SearchMenu p {
-    line-height: 1.38;
-    color: lightgrey;
-    text-align: center;
-    font-size: larger;
-    font-weight: bolder;
-}
+    .SearchMenu p {
+        line-height: 1.38;
+        color: lightgrey;
+        text-align: center;
+        font-size: larger;
+        font-weight: bolder;
+    }
 
-.SearchMenu input {
-    margin: 10px 5px;
-}
+    .SearchMenu input {
+        margin: 10px 5px;
+    }
 
-.SearchMenu div {
-    margin-block-start: auto;
-}
+    .SearchMenu div {
+        margin-block-start: auto;
+    }
 
-.SearchMenu div button {
-    width: -webkit-fill-available;
-    margin: 5px;
-}
+        .SearchMenu div button {
+            width: -webkit-fill-available;
+            margin: 5px;
+        }
 
 .WrappCards {
     min-height: 500px;
@@ -208,7 +209,7 @@ a, .btn-link {
 }
 
 .rz-tabview {
-    width: 95vh;
+    width: 95vw;
 }
 
 .FooterCard {
@@ -250,4 +251,103 @@ a, .btn-link {
     display: flex;
     flex-direction: column;
     justify-content: space-evenly
+}
+
+.NormalArea {
+    display: flex;
+}
+
+.CardItem {
+    width: 25%;
+}
+
+.rz-card, .card {
+    width: 92vw;
+    max-width: 400px;
+    min-width: 300px;
+    height: 350px;
+}
+
+.rz-tabview-panels {
+    width: auto;
+}
+.rz-g {
+    align-items: center;
+    justify-content: space-evenly;
+}
+
+.form {
+    margin-left: 10px;
+}
+
+.rz-tabview-panel .rz-card {
+    width: auto;
+    max-width: inherit !important;
+    min-width: auto;
+    min-height: auto;
+    height: auto;
+}
+
+@media (max-width: 750px) {
+    .Menu {
+        flex-direction: column;
+    }
+
+    .InfoAdicional {
+        display: flex;
+        margin: 20px 0;
+        flex-wrap: wrap;
+    }
+
+    .NormalArea {
+        flex-direction: column;
+        align-items: center;
+        margin: 0;
+    }
+
+    .SearchMenu {
+        width: 100% !important;
+        margin: 0;
+    }
+
+    .CardItem {
+        width: auto;
+    }
+
+    .rz-g {
+        flex-wrap: nowrap;
+        flex-direction: column;
+    }
+
+    .LoginWrapper img {
+        max-width: 80%;
+        max-height: 50%;
+        margin-top: -50px;
+    }
+
+    .InputWrapper input {
+        margin: 10px 0;
+        width: auto;
+    }
+
+    .WrappCards {
+        width: 100%;
+    }
+
+    .rz-dialog-wrapper {
+        top: 100px;
+        width: 90%;
+        margin: 2%;
+    }
+
+    .BackImage {
+        background-color: #7935CF;
+    }
+
+    .Wrapper {
+        justify-content: flex-start !important;
+    }
+    .icons{
+        display:none!important;
+    }
 }

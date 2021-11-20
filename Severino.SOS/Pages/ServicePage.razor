@@ -52,6 +52,10 @@
                         }
                     </div>
                     <RadzenButton Click=@(SendService) Text="Enviar" Class="PlusButton" ButtonStyle="ButtonStyle.Warning" />
+                    @if (ID > 0)
+                    {
+                        <RadzenButton Click=DeleteService Text="Excluir" Class="PlusButton" ButtonStyle="ButtonStyle.Danger" />
+                    }
                 </RadzenTabsItem>
                 <RadzenTabsItem Text="Agenda" Disabled="AgendaTabDisable">
                     <RadzenCheckBox @bind-Value=@AgendaDisable Name="AgendaFixa" TValue="bool" />
@@ -234,32 +238,37 @@
             }
             if (ID > 0)
             {
-                var resp2 = await _HttpService.GetAsync("services/" + ID.ToString(), null, null);
-                if (resp2.StatusCode == HttpStatusCode.OK)
-                {
-                    service = await JsonSerializer.DeserializeAsync<Service>(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(resp2.Content ?? "")));
-                    foreach (var Agenda in service.Schedules)
-                    {
-                        Agendas[Agenda.Dia - 1].id = Agenda.Id;
-                        Agendas[Agenda.Dia - 1].Ini = Agenda.De;
-                        Agendas[Agenda.Dia - 1].Fim = Agenda.Ate;
-                    }
-                    AgendaDisable = !(service.Schedules.Any());
-                    Tags = service.Tags.Split(',').ToList();
-                    if (service.Address != null)
-                    {
-                        FAddress = service.Address;
-                    }
-                    EndDisable = (service.Address == null);
-                }
-                EndTabDisable = false;
-                AgendaTabDisable = false;
+                await GetService();
             }
         }
         else
         {
             _navigationManager.NavigateTo("/", true);
         }
+    }
+
+    private async Task GetService()
+    {
+        var resp2 = await _HttpService.GetAsync("services/" + ID.ToString(), null, null);
+        if (resp2.StatusCode == HttpStatusCode.OK)
+        {
+            service = await JsonSerializer.DeserializeAsync<Service>(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(resp2.Content ?? "")));
+            foreach (var Agenda in service.Schedules)
+            {
+                Agendas[Agenda.Dia - 1].id = Agenda.Id;
+                Agendas[Agenda.Dia - 1].Ini = Agenda.De;
+                Agendas[Agenda.Dia - 1].Fim = Agenda.Ate;
+            }
+            AgendaDisable = !(service.Schedules.Any());
+            Tags = service.Tags.Split(',').ToList();
+            if (service.Address != null)
+            {
+                FAddress = service.Address;
+            }
+            EndDisable = (service.Address == null);
+        }
+        EndTabDisable = false;
+        AgendaTabDisable = false;
     }
 
     private async Task SendService()
@@ -307,7 +316,6 @@
                 uf = FAddress.Uf,
                 cep = FAddress.Cep,
                 complemento = FAddress.Complemento == null ? string.Empty : FAddress.Complemento,
-                is_proff = true,
                 service_id = ID
             };
             if (FAddress.Id == 0)
@@ -322,7 +330,7 @@
                 ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Endereço Atualizado", Detail = "Endereço atualizado com Sucesso", Duration = 4000 });
                 _navigationManager.NavigateTo("/", true);
             }
-            else ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Erro de atualização", Detail = "Ocorreram erros na atualização: "+ resp2.Content, Duration = 4000 });
+            else ShowNotification(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Erro de atualização", Detail = "Ocorreram erros na atualização: " + resp2.Content, Duration = 4000 });
         }
         _navigationManager.NavigateTo("/MyServices", true);
     }
@@ -347,6 +355,8 @@
             if (dia.id > 0) await _HttpService.PutAsync("schedules", dia.id.ToString(), Obj, null);
             else await _HttpService.PostAsync("schedules", Obj, null);
         }
+        await GetService();
+
         EndTabDisable = false;
         FIndex = 2;
     }
@@ -365,6 +375,12 @@
             return true;
         }
 
+    }
+
+    private async Task DeleteService()
+    {
+        await _HttpService.DeleteAsync("services/" + ID.ToString(), null);
+        _navigationManager.NavigateTo("/MyServices", true);
     }
 
     private async Task Search()
@@ -393,10 +409,15 @@
 <style>
     .Wrapper {
         display: flex;
-        justify-content: space-around;
     }
 
     .rz-colorpicker, .rz-lookup-search input, .rz-spinner, .rz-calendar .rz-inputtext, .rz-multiselect, .rz-dropdown, .mask, .rz-textarea, .rz-textbox {
         width: -webkit-fill-available !important;
+    }
+
+    @@media (max-width: 750px) {
+        .Wrapper {
+            justify-content:flex-start;
+        }
     }
 </style>

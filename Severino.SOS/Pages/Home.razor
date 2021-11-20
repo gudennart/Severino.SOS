@@ -25,7 +25,7 @@
         <p>Veja avaliações mais acertivas sobre os serviços ofertados. Por meio de revisões, e a poucos clicks de distância, avalie a credibilidade de um serviço, abra um chamado, ou reclame do mesmo.</p>
     </div>
 </div>
-<div style="display:flex; margin: 0 10px;">
+<div class="NormalArea">
     <div class="SearchMenu">
         <p>Filtros</p>
         <RadzenTextBox Placeholder="Pesquisar" @bind-Value="FSearchText" />
@@ -48,39 +48,39 @@
     <div class="WrappCards">
         <RadzenDataList WrapItems="true" AllowPaging="true" PageSize="9" @bind-Data="FDSServices" TItem="Service">
             <Template Context="context">
-                <RadzenCard Style="width:25%;">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <b>Servico:</b>
-                            <div>@context.Title</div>
-                            <b style="margin-top:20px">Prestador:</b>
-                            <div>@context.User.Nome</div>
+                    <RadzenCard>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <b>Servico:</b>
+                                <div>@context.Title</div>
+                                <b style="margin-top:20px">Prestador:</b>
+                                <div>@context.User.Nome</div>
 
+                            </div>
+                            <div class="col-md-6">
+                                <b>Telefone</b>
+                                <div>@context.User.Whatsapp</div>
+                                <b style="margin-top:20px">Descrição:</b>
+                                <div>@context.Descricao</div>
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <b>Telefone</b>
-                            <div>@context.User.Whatsapp</div>
-                            <b style="margin-top:20px">Descrição:</b>
-                            <div>@context.Descricao</div>
+                        <div class="FooterCard">
+                            @if (context.Categoria == 1)
+                            {<i class="fas fa-car-side fa-3x"></i>}
+                            else if (context.Categoria == 2)
+                            {<i class="fas fa-motorcycle fa-3x"></i>}
+                            else if (context.Categoria == 3)
+                            {<i class="fas fa-bus fa-3x"></i>}
+                            else if (context.Categoria == 4)
+                            {<i class="fas fa-truck-pickup fa-3x"></i>}
+                            else if (context.Categoria == 5)
+                            {<i class="fas fa-truck fa-3x"></i>}
+                            else
+                            {<i class="fas fa-tools fa-3x"></i>}
+                            <RadzenButton Click="(X => Details(context))" ButtonStyle="ButtonStyle.Warning" Style="float: left;" Icon="search" />
                         </div>
-                    </div>
-                    <div class="FooterCard">
-                        @if (context.Categoria == 1)
-                        {<i class="fas fa-car-side fa-3x"></i>}
-                        else if (context.Categoria == 2)
-                        {<i class="fas fa-motorcycle fa-3x"></i>}
-                        else if (context.Categoria == 3)
-                        {<i class="fas fa-bus fa-3x"></i>}
-                        else if (context.Categoria == 4)
-                        {<i class="fas fa-truck-pickup fa-3x"></i>}
-                        else if (context.Categoria == 5)
-                        {<i class="fas fa-truck fa-3x"></i>}
-                        else
-                        {<i class="fas fa-tools fa-3x"></i>}
-                        <RadzenButton Click="(X => Details(context))" ButtonStyle="ButtonStyle.Warning" Style="float: left;" Icon="search" />
-                    </div>
 
-                </RadzenCard>
+                    </RadzenCard>
             </Template>
         </RadzenDataList>
     </div>
@@ -101,7 +101,6 @@
     private string FSearchText { get; set; }
     private string FSearchCEP { get; set; }
     private string FComment { get; set; }
-    private bool FAddAsses = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -161,7 +160,9 @@
         }
         MAssessment = lService.Assessments.Where(A => A.UserId == FUser.Id).FirstOrDefault();
         if (MAssessment == null) MAssessment = new();
+        else FComment = MAssessment.Conteudo.Split('|')[1];
         MAssessment.ServiceId = lService.Id;
+        FStar = MAssessment.Nota;
         lService.Schedules = lService.Schedules.OrderBy(D => D.Dia).ToList();
         foreach (var day in lService.Schedules)
         {
@@ -196,7 +197,7 @@
         FIndex = 0;
         var result = await DialogService.OpenAsync(pService.Title, ds =>
     @<div>
-        <div class="row">
+        <div class="row" style="flex-wrap: wrap;">
             <RadzenTabs RenderMode="TabRenderMode.Client" @bind-SelectedIndex="FIndex">
                 <Tabs>
                     <RadzenTabsItem Text="Serviço">
@@ -301,7 +302,7 @@
                                 </h3>
                                 <p>@ListText[1]</p>
 
-                                <RadzenRating Stars="5" @bind-Value="aval.Nota" />
+                                <RadzenRating Stars="5" @bind-Value="aval.Nota" Disabled="true" />
                             </RadzenCard>
                         }
 
@@ -316,8 +317,6 @@
             {<div>** Serviços sem agenda fixa não detém um horário definido de atendimento.</div>}
         </div>
     </div>
-
-
     );
     }
 
@@ -342,6 +341,7 @@
         }
         FStar = 0;
         FComment = "";
+        DialogService.Close();
     }
 
     public void Clear()
@@ -386,3 +386,15 @@
         new Categoria{ ID=4, Text = "Sábado"},
     };
 }
+<style>
+    .rz-card, .card {
+        width: 92vw;
+        max-width: 350px;
+        min-width: 300px;
+        min-height: 200px;
+        height: fit-content;
+    }
+    .row{
+        flex-wrap: nowrap;
+    }
+</style>

@@ -1,15 +1,7 @@
 ﻿@inject NavigationManager _NavManager;
 @inject Blazored.SessionStorage.ISessionStorageService _SessionService;
-<div style="display: flex; align-items: center;">
-    <img src="./Images/Icon.png" style="max-height:50px;" />
-    <div class="top-row pl-4 navbar navbar-dark">
 
-        <a class="navbar-brand" href="">Severino SOS</a>
-        <button class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-    </div>
-</div>
+<img src="./Images/Icon.png" style="max-height:50px; border-radius:10px;" @onclick=@(args => OnClick("/Home")) />
 
 <div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
     <RadzenButton style="margin-bottom: 16px" Class="BtnMenu" Click=@(args => OnClick("/Home")) Text="Início" ButtonStyle="ButtonStyle.Warning" />
